@@ -71,6 +71,15 @@ def applications_list(app_name=None):
 
 @app.route("/status/<app_name>", methods=["GET"])
 def application_status(app_name:str):
+    """
+    Get status for a specific app
+    :args:
+        app_name:str - application name
+    :params:
+        applications:list - list of applications
+    :return:
+        application status if exists - if not "Unknown"
+    """
     applications = fetch_applications()
     for this_app in applications:
         if this_app["@Name"] == app_name:
@@ -80,21 +89,41 @@ def application_status(app_name:str):
 
 @app.route("/execute/<app_name>/start", methods=["GET"])
 def application_start(app_name:str):
+    """
+    Based on app_name start application
+    :return:
+        application status
+    """
     execute_application(app_name=app_name, cmd='start')
     return application_status(app_name=app_name)
 
 @app.route("/execute/<app_name>/stop", methods=["GET"])
 def application_stop(app_name:str):
+    """
+    Based on app_name stop application
+    :return:
+        application status
+    """
     execute_application(app_name=app_name, cmd='stop')
     return application_status(app_name=app_name)
 
 @app.route("/execute/<app_name>/restart", methods=["GET"])
 def application_restart(app_name:str):
+    """
+    Based on app_name restart application
+    :return:
+        application status
+    """
     execute_application(app_name=app_name, cmd='restart')
     return application_status(app_name=app_name)
 
 @app.route("/execute/<app_name>/remove", methods=["GET"])
 def application_remove(app_name:str):
+    """
+    Based on app_name remove application
+    :return:
+        application status
+    """
     execute_application(app_name=app_name, cmd='start')
     return application_status(app_name=app_name)
 
