@@ -1,5 +1,8 @@
-import __support__
+import ast
 from flask import Flask, jsonify
+
+
+import __support__
 
 app = Flask(__name__)
 BASE_URL = "https://166.143.227.89"
@@ -31,6 +34,53 @@ def fetch_applications()->list:
                 pass
 
     return applications
+
+
+def fetch_videos()->list:
+    """
+    Fetch list of applications from Camera
+    :params:
+        url:str - built URL
+        applications:list - list of applications
+        response:requests.GET - response from GET
+        content:dict - response converted from XML to JSON
+    :return:
+        list of applications
+    :sample video info:
+    {
+        "@diskid":"SD_DISK",
+        "@eventid":"Motion Recording",
+        "@eventtrigger":"Record video while the rule is active",
+        "@locked":"No",
+        "@recordingid":"20250921_164046_B0AB_B8A44FC5C075",
+        "@recordingstatus":"recording",
+        "@recordingtype":"triggered",
+        "@source":"2",
+        "@starttime":"2025-09-21T20:40:46.627753Z",
+        "@starttimelocal":"2025-09-21T16:40:46.627753-04:00",
+        "@stoptime":"",
+        "@stoptimelocal":"",
+        "video":{
+            "@framerate":"15:1",
+            "@height":"1080",
+            "@mimetype":"video/x-h264",
+            "@resolution":"1920x1080",
+            "@source":"2","@width":"1920"
+        }
+    }
+    """
+    url = f"{BASE_URL}/axis-cgi/record/list.cgi?recordingid=all"
+    videos = {}
+
+    response = __support__.get_data(url=url, user=USER, password=PASSWORD)
+    if 200 <= response.status_code < 300:
+        content = __support__.convert_xml(content=response.content.decode())
+        if content:
+            for user in list(content.keys()):
+                if 'recordings' in content[user] and 'recording' in content[user]['recordings']:
+                    videos[user] = content[user]['recordings']['recording']
+
+    return videos
 
 def execute_application(app_name:str, cmd:str):
     """
@@ -127,6 +177,43 @@ def application_remove(app_name:str):
     execute_application(app_name=app_name, cmd='start')
     return application_status(app_name=app_name)
 
+@app.route("/feed/list", methods=["GET"])
+@app.route("/feed/list/<record_id>", methods=["GET"])
+def list_videos(record_id:str=None):
+    response = fetch_videos()
+    if record_id:
+        for user in response:
+            for video in response[user]:
+                if record_id == video['@recordingid']:
+                    return jsonify(video)
+
+    return jsonify(response)
+
+@app.route("/feed/export/<record_id>", methods=["GET"])
+def export_recording(record_id):
+
+    image_info = list_videos(record_id)
+    if not image_info:
+        return jsonify({"Error": f"Failed to locate image with ID {record_id}"})
+    image_info = ast.literal_eval(image_info.data.decode())
+
+    url = f"{BASE_URL}/axis-cgi/record/export/exportrecording.cgi?schemaversion=1&recordingid={record_id}&exportformat=matroska&diskid={image_info['@diskid']}"
+    response = __support__.get_data(url=url, user=USER, password=PASSWORD)
+    if not 200 <= int(response.status_code) < 300:
+        return jsonify({"Error": f"Failed to execute due to network error {response.status_code}"})
+
+    return (
+        response.content,
+        200,
+        {
+            "Content-Type": "video/mp4",
+            "Content-Disposition": "inline"  # let browser decide how to display
+        },
+    )
+
+    # url = f"{BASE_URL}/axis-cgi/record/export/exportrecording.cgi?schemaversion=1&recordingid={record_id}"
+    # response = __support__.get_data(url=url, user=USER, password=PASSWORD)
+    # print(response)
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=False, use_reloader=False)
