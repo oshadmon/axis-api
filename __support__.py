@@ -2,41 +2,20 @@ import requests
 from requests.auth import HTTPDigestAuth
 import xmltodict
 
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-def get_data(url:str, user:str, password:str):
-    """
-        Execute GET against given URL
-        :global:
-            USER:str - username
-            PASSWORD:str - password credentials
-        :args:
-            url:str - BASE_URL + path
-        :params:
-            response:requests.GET - response from request
-        :return:
-            response content (decoded)
-        """
+
+def rest_request(method:str, url:str, headers:dict=None, data_payload:str=None, json_payload:dict=None, user:str=None, password:str=None, timeout:int=30):
+    auth = HTTPDigestAuth(user, password) if user and password else None
     try:
-        response = requests.get(
-            url=url,
-            auth=HTTPDigestAuth(user, password),
-            verify=False  # keep disabled unless you add the cert
-        )
+        response = requests.request(method=method.upper(), url=url, headers=headers, data=data_payload,
+                                    json=json_payload, auth=auth, timeout=timeout, verify=False)
         response.raise_for_status()
     except Exception as error:
-        raise Exception(f"Failed to execute GET against {url} (error: {error})")
+        raise Exception(f"Failed to execute {method.upper()} against {url} (Error: {error})")
     return response
 
-def post(url:str, user:str, password:str):
-    try:
-        response = requests.post(
-            url=url,
-            auth=HTTPDigestAuth(user, password),
-            verify=False  # keep disabled unless you add the cert
-        )
-        response.raise_for_status()
-    except Exception as error:
-        raise Exception(f"Failed to execute POST against {url} (error: {error})")
 
 def convert_xml(content:str)->dict:
     """
