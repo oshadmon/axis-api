@@ -1,3 +1,4 @@
+import re
 import requests
 from requests.auth import HTTPDigestAuth
 import xmltodict
@@ -49,3 +50,8 @@ def extract_credentials(conn_info:str)->(str, str, str):
         raise ValueError(f"Video Connection format must be [USER:PASSWORD]@[IP:PORT]")
 
     return base_url, user, password
+
+def camel_to_snake(name: str) -> str:
+    """Convert CamelCase or PascalCase to snake_case."""
+    s1 = re.sub(r'(.)([A-Z][a-z]+)', r'\1_\2', name)
+    return re.sub(r'([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
