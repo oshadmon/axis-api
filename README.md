@@ -20,6 +20,8 @@ python3 camera_actions.py
 
 3. Using browser execute requests
 
+<div align="center">
+
 |           Call            |                          Info                     | 
 |:-------------------------:|:-------------------------------------------------:| 
 |     `/config/status`      |        get camera status (active / not active)    | 
@@ -35,3 +37,5 @@ python3 camera_actions.py
 | `/recordings/list` |               list accessible recordings          | 
 | `/recordings/<record_id>` | get information for a specific recording (based on ID) |
 | `/recordings/export/<record_id>` |        export recording based on recording ID     |
+
+</div>
