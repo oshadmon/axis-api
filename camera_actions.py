@@ -24,7 +24,6 @@ def configure_client(base_url:str=None, user:str=None, password:str=None):
     if password:
         PASSWORD = password
 
-
 #--- Configurations --
 @app.route("/config/status", methods=["GET"])
 def get_status():
