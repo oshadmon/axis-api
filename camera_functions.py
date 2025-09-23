@@ -1,6 +1,5 @@
-from __support__ import rest_request, convert_xml
-
 import ast
+from __support__ import rest_request, convert_xml
 
 #--- Configurations --
 def camera_status(base_url:str, user:str, password:str):
@@ -69,7 +68,7 @@ def __get_applications(base_url:str, user:str, password:str):
     if not base_url.startswith('http'):
         url = f'https://{url}'
     response = rest_request(method='GET', url=url, user=user, password=password)
-    content = __support__.convert_xml(content=response.content.decode())
+    content = convert_xml(content=response.content.decode())
     if content and content['reply']['@result'] == 'ok':
             try:
                 applications = content['reply']['application']

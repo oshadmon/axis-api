@@ -1,28 +1,28 @@
-import ast
-from importlib.metadata import pass_none
-
+import os
 from flask import Flask, jsonify
-import __support__
 import camera_functions
-
+from __support__ import extract_credentials
 app = Flask(__name__)
 BASE_URL = "166.143.227.89"
 USER = "AnyLog"
 PASSWORD = "OriIsTheBest#1!"
 
 #--- Credentials --
-def configure_client(base_url:str=None, user:str=None, password:str=None):
+def configure_client(camera_conn:str=None):
     """
-    Update global config for Python client usage. Flask/browser requests will continue using defaults unless env vars
-    are set.
+    Extract camera credentials from ENV variable or user_input param
+    :args:
+        camera_conn:str - camera connection through user input or env param (USER:PASS@IP:PORT)
+    :global:
+        BASE_URL:str
+        USER:str
+        PASSWORD:str
     """
     global BASE_URL, USER, PASSWORD
-    if base_url:
-        BASE_URL = base_url
-    if user:
-        USER = user
-    if password:
-        PASSWORD = password
+    if os.getenv('CAMERA_CONN'):
+        BASE_URL, USER, PASSWORD = extract_credentials(conn_info=os.getenv('CAMERA_CONN'))
+    elif camera_conn:
+        BASE_URL, USER, PASSWORD = extract_credentials(conn_info=camera_conn)
 
 #--- Configurations --
 @app.route("/config/status", methods=["GET"])
@@ -45,12 +45,17 @@ def get_geolocation():
     return jsonify(output)
 
 #--- Applications --
-@app.route("/apps/list", methods=["GET"])
+@app.route("/app/list", methods=["GET"])
 def get_app_list():
+    apps_list = []
     output = camera_functions.list_applications(base_url=BASE_URL, user=USER, password=PASSWORD)
-    return jsonify(output)
+    if output:
+        for this_app in output:
+            apps_list.append(this_app['@Name'])
+    return jsonify(apps_list)
 
-@app.route("/app/<app_name>", methods=["GET"])
+
+@app.route("/app/<app_name>/info", methods=["GET"])
 def get_app_info(app_name:str):
     output = camera_functions.list_applications(base_url=BASE_URL, user=USER, password=PASSWORD, app_name=app_name, status=False)
     return jsonify(output)

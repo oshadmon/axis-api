@@ -30,3 +30,22 @@ def convert_xml(content:str)->dict:
     except Exception as error:
         raise Exception(f"Failed to convert content from XML to dict")
 
+
+def extract_credentials(conn_info:str)->(str, str, str):
+    auth = None
+    base_url = None
+    user = None
+    password = None
+
+    if '@' in video_conn:
+        auth, base_url = conn_info.split("@")
+    else:
+        return conn_info
+
+
+    if auth and ':' in auth:
+        user, password = auth.split(":")
+    if not auth:
+        raise ValueError(f"Video Connection format must be [USER:PASSWORD]@[IP:PORT]")
+
+    return base_url, user, password
