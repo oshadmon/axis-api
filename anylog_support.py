@@ -1,6 +1,7 @@
 import __support__
 import camera_functions
 import json
+from camera_functions import list_recordings
 
 def create_policy(base_url:str, user:str, password:str):
     """
@@ -57,3 +58,32 @@ def declare_policy(anylog_conn:str, ledger_conn:str, base_url:str, user:str, pas
     __support__.rest_request(method='POST', url=f"http://{anylog_conn}", headers=headers, data_payload=new_policy)
 
 
+def generate_data(base_url:str, user:str, password:str, record_id:str):
+    data = list_recordings(base_url=base_url, user=user, password=password, record_id=record_id)
+    payload = {
+        "video_id": record_id,
+        "start_time": data['@starttime'],
+        "end_time": data['@stoptime'],
+        "source": data['@source'],
+        "video": {
+            "resolution": data['video']['@resolution'],
+            "width": data['video']['@width'],
+            "height": data['video']['@height']
+        }
+    }
+    return payload
+
+
+def publish_data(anylog_conn:str, payload:dict, topic:str='axies', dbms:str='axis', table:str='camera1', serialized=None):
+    payload['dbms'] = dbms
+    payload['table'] = table
+
+    serialized_payload = json.dumps(payload)
+    headers = {
+        'command': 'data',
+        'topic': topic,
+        'User-Agent': 'AnyLog/1.23',
+        'Content-Type': 'text/plain'
+    }
+
+    __support__.rest_request(method='POST', url=f'http://{anylog_conn}', headers=headers, data_payload=serialized_payload)

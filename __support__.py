@@ -37,7 +37,7 @@ def extract_credentials(conn_info:str)->(str, str, str):
     user = None
     password = None
 
-    if '@' in video_conn:
+    if '@' in conn_info:
         auth, base_url = conn_info.split("@")
     else:
         return conn_info
