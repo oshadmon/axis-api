@@ -6,8 +6,6 @@ def main():
     parse.add_argument('anylog_conn', type=str, default=None, help='AnyLog REST connection')
     parse.add_argument('ledger_conn', type=str, default=None, help='TCP connection information for Ledger / Master node')
     parse.add_argument('--topic', type=str, default='axis', help='Message broker topic')
-    parse.add_argument('--dbms', type=str, default="bring [dbms]", help='database name (can be in the data)')
-    parse.add_argument('--table', type=str, default="bring [table]", help='table name (can be in the data)')
     args = parse.parse_args()
 
     is_policy = anylog_support.check_policy(anylog_conn=args.anylog_conn, where_condition={"id": args.topic})

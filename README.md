@@ -39,3 +39,63 @@ python3 camera_actions.py
 | `/recordings/export/<record_id>` |        export recording based on recording ID     |
 
 </div>
+
+## Preparing AnyLog
+
+In order to accept data into AnyLog user needs to declare a mapping policy and MQTT client; this can be done 
+via [anylog_operator.py](anylog_operator.py). 
+
+```shell
+python3 anylog_operator.py [OPERATOR CONN] [LEDGER_CONN] {--topic [axis]}
+```
+
+**Behavior**:
+```anylog 
+AL anylog-operator > blockchain get mapping 
+
+[{'mapping' : {'id' : 'axis',
+               'dbms' : 'bring [dbms]',
+               'table' : 'bring [table]',
+               'video_id' : 'bring [video_id]',
+               'timestamp' : {'type' : 'timestamp',
+                              'default' : 'now()'},
+               'start_time' : {'type' : 'timestamp',
+                               'bring' : '[start_time]'},
+               'end_time' : {'type' : 'timestamp',
+                             'bring' : '[end_time]'},
+               'source' : {'type' : 'string',
+                           'bring' : '[source]'},
+               'file_type' : {'type' : 'string',
+                              'bring' : '[file_type]'},
+               'file' : {'blob' : True,
+                         'bring' : '[content]',
+                         'extension' : 'mp4',
+                         'apply' : 'base64decoding',
+                         'hash' : 'md5',
+                         'type' : 'varchar'},
+               'readings' : 'video',
+               'schema' : {'video_resolution' : {'type' : 'string',
+                                                 'bring' : '[resolution]'},
+                           'video_width' : {'type' : 'string',
+                                            'bring' : '[width]'},
+                           'video_height' : {'type' : 'string',
+                                             'bring' : '[height]'}},
+               'date' : '2025-09-23T19:46:42.240825Z',
+               'ledger' : 'global'}}]
+
+AL anylog-operator > get msg client 
+
+Subscription ID: 0001
+User:         unused
+Broker:       rest
+Connection:   Connected to local Message Server
+
+     Messages    Success     Errors      Last message time    Last error time      Last Error
+     ----------  ----------  ----------  -------------------  -------------------  ----------------------------------
+              0           0           0  
+     
+     Subscribed Topics:
+     Topic QOS DBMS Table Column name Column Type Mapping Function Optional Policies                                              
+     -----|---|----|-----|-----------|-----------|----------------|--------|-----------------------------------------------------|
+     axis |  0|    |     |           |           |                |        |blockchain get (mapping,transform) where [id] == axis|
+```
