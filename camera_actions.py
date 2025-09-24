@@ -102,5 +102,9 @@ def recording_info(record_id:str=None):
 def recording_export(record_id:str=None):
     return camera_functions.export_recording(base_url=BASE_URL, user=USER, password=PASSWORD, record_id=record_id)
 
+@app.route("/logs", methods=["GET"])
+def get_logs():
+    return camera_functions.get_logs(base_url=BASE_URL, user=USER, password=PASSWORD)
+
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=False, use_reloader=False)

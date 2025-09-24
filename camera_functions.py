@@ -139,4 +139,46 @@ def export_recording(base_url:str, user:str, password:str, record_id:str):
         },
     )
 
+#---- Analytics ---
+def get_scenerios(base_url:str, user:str, password:str):
+    url = f"{base_url}/axis-cgi/applications/control.cgi"
+    if not base_url.startswith('http'):
+        url = f"https://{url}"
 
+    payload = {
+        "apiVersion": "1.1",
+        "context": "my context",
+        "method": "getConfiguration"
+    }
+
+    response = rest_request(method='POST', url=url, user=user, password=password, json_payload=payload, stream=True)
+    print(response)
+
+
+def get_analytics(base_url:str, user:str, password:str):
+    url = f"{base_url}/local/objectanalytics/control.cgi"
+    if not base_url.startswith('http'):
+        url = f"https://{url}"
+
+    start_time = "2025-09-23T23:45:04"
+    end_time = "2025-09-23T23:46:19"
+    payload = {
+        "apiVersion": "1.1",
+        "method": "getAccumulatedCounts",
+        "params": {
+            "scenario": "Scenario1",
+            "startTime": start_time,
+            "endTime": end_time,
+            "objects": ["Bus", "Car", "Bike", "Truck", "Other"]
+        }
+    }
+
+    response = rest_request(method='POST', url=url, user=user, password=password, json_payload=payload)
+    print(response)
+
+
+if __name__ == '__main__':
+    BASE_URL = "166.143.227.89"
+    USER = "AnyLog"
+    PASSWORD = "OriIsTheBest#1!"
+    get_scenerios(base_url=BASE_URL, user=USER, password=PASSWORD)
