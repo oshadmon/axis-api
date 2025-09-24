@@ -7,11 +7,12 @@ import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
-def rest_request(method:str, url:str, headers:dict=None, data_payload:str=None, json_payload:dict=None, user:str=None, password:str=None, timeout:int=30):
+def rest_request(method:str, url:str, headers:dict=None, data_payload:str=None, json_payload:dict=None, user:str=None,
+                 password:str=None, timeout:int=30, stream:bool=False):
     auth = HTTPDigestAuth(user, password) if user and password else None
     try:
         response = requests.request(method=method.upper(), url=url, headers=headers, data=data_payload,
-                                    json=json_payload, auth=auth, timeout=timeout, verify=False)
+                                    json=json_payload, auth=auth, timeout=timeout, verify=False, stream=stream)
         response.raise_for_status()
     except Exception as error:
         raise Exception(f"Failed to execute {method.upper()} against {url} (Error: {error})")

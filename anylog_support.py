@@ -67,19 +67,18 @@ def create_mapping_policy(policy_name:str, dbms:str="bring [dbms]", table:str="b
         "id": "axis-data",
         "dbms": "bring [dbms]",
         "table": "bring [table]",
-        "video_id": "bring [video_id]",
-        "timestamp": {"type": "timestamp", "default": "now()"},
-        "start_time": {"type": "timestamp", "bring": "[start_time]"},
-        "end_time": {"type": "timestamp", "bring": "[end_time]"},
-        "source": {"type": "string", "bring": "[source]"},
-        "file_type": {"type": "string", "bring": "[file_type]"},
-        "file": {"blob": true, "bring": "[content]", "extension": "mp4",
-                "apply": "base64decoding", "hash": "md5", "type": "varchar"},
-        "readings": "video",
         "schema": {
-          "video_resolution": {"type": "string", "bring": "[resolution]"},
-          "video_width": {"type": "string", "bring": "[width]"},
-          "video_height": {"type": "string", "bring": "[height]"}
+            "video_id": {"type": "string", "bring": "[video_id]"},
+            "timestamp": {"type": "timestamp", "default": "now()"},
+            "start_time": {"type": "timestamp", "bring": "[start_time]"},
+            "end_time": {"type": "timestamp", "bring": "[end_time]"},
+            "source": {"type": "string", "bring": "[source]"},
+            "file_type": {"type": "string", "bring": "[file_type]"},
+            "file": {"blob": true, "bring": "[content]", "extension": "mp4",
+                    "apply": "base64decoding", "hash": "md5", "type": "varchar"},
+            "video_resolution": {"type": "string", "bring": "[resolution]"},
+            "video_width": {"type": "string", "bring": "[width]"},
+            "video_height": {"type": "string", "bring": "[height]"}
         }
       }
     }
@@ -90,31 +89,30 @@ def create_mapping_policy(policy_name:str, dbms:str="bring [dbms]", table:str="b
         "end_time": "2025-09-23T17:16:19.490419Z",
         "source": "2",
         "content": "VlqUVfAp0PcA0+PcFo8KAka0TBS2JABT3RcU03x5LO9eeoBZhCU5l1DkgqI7+ERGSNO5WF6hIRG9",
-        "file_type": "video/mp4"
-        "video": {
-            "resolution": "1920x1080",
-            "width": "1920",
-            "height": "1080"
-        }
+        "file_type": "video/mp4",
+        "video_resolution": "1920x1080",
+        "video_width": "1920",
+        "video_height": "1080"
+
     }
     """
     new_policy = {"mapping": {
         "id": policy_name,
+        "name": f"{policy_name}-mapping",
         "dbms": dbms,
         "table": table,
-        "video_id": "bring [video_id]",
-        "timestamp": {"type": "timestamp",  "default": "now()"},
-        "start_time": {"type": "timestamp", "bring": "[start_time]"},
-        "end_time": {"type": "timestamp", "bring": "[end_time]"},
-        "source": {"type": "string", "bring": "[source]"},
-        "file_type": {"type": "string", "bring": "[file_type]"},
-        "file": {"blob": True, "bring": "[content]", "extension": "mp4",
-                 "apply": "base64decoding", "hash": "md5", "type": "varchar"},
-        "readings": "video",
         "schema": {
-            "video_resolution": {"type": "string", "bring": "[resolution]"},
-            "video_width": {"type": "string", "bring": "[width]"},
-            "video_height": {"type": "string", "bring": "[height]"}
+            "timestamp": {"type": "timestamp", "default": "now()"},
+            "video_id": {"type": "string", "bring": "[video_id]"},
+            "start_time": {"type": "timestamp", "bring": "[start_time]"},
+            "end_time": {"type": "timestamp", "bring": "[end_time]"},
+            "source": {"type": "string", "bring": "[source]"},
+            "file_type": {"type": "string", "bring": "[file_type]"},
+            "file": {"blob": True, "bring": "[content]", "extension": "mp4",
+                     "apply": "base64decoding", "hash": "md5", "type": "varchar"},
+            "video_resolution": {"type": "string", "bring": "[video_resolution]"},
+            "video_width": {"type": "string", "bring": "[video_width]"},
+            "video_height": {"type": "string", "bring": "[video_height]"}
         }
     }}
 
@@ -152,12 +150,11 @@ def check_policy(anylog_conn:str, where_condition:dict={})->bool:
 
     return status
 
-def declare_policy(raw_policy, anylog_conn:str, ledger_conn:str):
+def declare_policy(raw_policy, anylog_conn:str):
     new_policy = f"<new_policy={raw_policy}>"
     headers = {
         'command': 'blockchain insert where policy=!new_policy and local=true and master=!ledger_conn',
-        'User-Agent': 'AnyLog/1.23',
-        'destination': ledger_conn
+        'User-Agent': 'AnyLog/1.23'
     }
     __support__.rest_request(method='POST', url=f"http://{anylog_conn}", headers=headers, data_payload=new_policy)
 
@@ -179,11 +176,9 @@ def generate_data(base_url:str, user:str, password:str, record_id:str):
         "start_time": data['@starttime'],
         "end_time": data['@stoptime'],
         "source": data['@source'],
-        "video": {
-            "resolution": data['video']['@resolution'],
-            "width": data['video']['@width'],
-            "height": data['video']['@height']
-        }
+        "video_resolution": data['video']['@resolution'],
+        "video_width": data['video']['@width'],
+        "video_height": data['video']['@height']
     }
     return payload
 

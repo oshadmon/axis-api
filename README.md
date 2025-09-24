@@ -42,8 +42,9 @@ python3 camera_actions.py
 
 ## Preparing AnyLog
 
-In order to accept data into AnyLog user needs to declare a mapping policy and MQTT client; this can be done 
-via [anylog_operator.py](anylog_operator.py). 
+In order to accept data into AnyLog user needs to declare a mapping policy and MQTT client; this can be done via 
+[anylog_operator.py](anylog_operator.py). This step is to be done each time node reboots. The policy does not get 
+regenerated each time though. 
 
 ```shell
 python3 anylog_operator.py [OPERATOR CONN] [LEDGER_CONN] {--topic [axis]}
@@ -99,3 +100,5 @@ Connection:   Connected to local Message Server
      -----|---|----|-----|-----------|-----------|----------------|--------|-----------------------------------------------------|
      axis |  0|    |     |           |           |                |        |blockchain get (mapping,transform) where [id] == axis|
 ```
+
+## Publish Data

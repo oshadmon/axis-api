@@ -126,7 +126,7 @@ def export_recording(base_url:str, user:str, password:str, record_id:str):
     if not base_url.startswith('http'):
         url = f"https://{url}"
 
-    response = rest_request(method='GET', url=url, user=user, password=password)
+    response = rest_request(method='GET', url=url, user=user, password=password, stream=True)
     if not 200 <= int(response.status_code) < 300:
         return {"Error": f"Failed to execute due to network error {response.status_code}"}
 
