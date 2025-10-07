@@ -46,7 +46,7 @@ def __publish_recording(anylog_conn:str, base_url:str, user:str, password:str, d
                 recording_info = anylog_support.generate_data(base_url=base_url, user=user, password=password, record_id=recording_id)
                 recording_info["timestamp"] = datetime.datetime.now(tz=datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
                 content, _, _ = export_recording(base_url=base_url, user=user, password=password, record_id=recording_id)
-                recording_info['file'] = base64.b64encode(content).decode('utf-8')
+                recording_info['content'] = base64.b64encode(content).decode('utf-8')
                 recording_info['file_type'] = 'mp4'
 
                 payload.update(recording_info)

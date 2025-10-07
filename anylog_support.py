@@ -96,25 +96,65 @@ def create_camera_mapping_policy(policy_name:str, dbms:str="bring [dbms]", table
 
     }
     """
-    new_policy = {"mapping": {
-        "id": policy_name,
-        "name": f"{policy_name}-mapping",
-        "dbms": dbms,
-        "table": table,
-        "schema": {
-            "timestamp": {"type": "timestamp", "default": "now()"},
-            "video_id": {"type": "string", "bring": "[video_id]"},
-            "start_time": {"type": "timestamp", "bring": "[start_time]"},
-            "end_time": {"type": "timestamp", "bring": "[end_time]"},
-            "source": {"type": "string", "bring": "[source]"},
-            "file_type": {"type": "string", "bring": "[file_type]"},
-            "file": {"blob": True, "bring": "[content]", "extension": "mp4",
-                     "apply": "base64decoding", "hash": "md5", "type": "varchar"},
-            "video_resolution": {"type": "string", "bring": "[video_resolution]"},
-            "video_width": {"type": "string", "bring": "[video_width]"},
-            "video_height": {"type": "string", "bring": "[video_height]"}
+    new_policy = {
+        'mapping' : {
+            'id' : 'axis',
+            'name' : 'axis-mapping',
+            'dbms' : 'bring [dbms]',
+            'table' : 'bring [table]',
+            'schema' : {
+                'video_id' : {
+                    'type' : 'string',
+                    'bring' : '[video_id]',
+                    'default' : ''
+                },
+                'start_time' : {
+                    'type' : 'timestamp',
+                    'bring' : '[start_time]',
+                    'default' : 'now()'
+                },
+                'end_time' : {
+                    'type' : 'timestamp',
+                    'bring' : '[end_time]',
+                    'default' : 'now()'
+                },
+                'source' : {
+                    'type' : 'string',
+                    'bring' : '[source]',
+                    'default' : ''
+                },
+                'file_type' : {
+                    'type' : 'string',
+                    'bring' : '[file_type]',
+                    'default' : ''
+                },
+                'file' : {
+                    'blob' : True,
+                    'bring' : '[content]',
+                    'extension' : 'mp4',
+                    'apply' : 'base64decoding',
+                    'hash' : 'md5',
+                    'type' : 'varchar'
+                },
+                'video_resolution' : {
+                    'type' : 'string',
+                    'bring' : '[video_resolution]',
+                    'default' : ''
+                },
+                'video_width' : {
+                    'type' : 'string',
+                    'bring' : '[video_width]',
+                    'default' : ''
+                },
+                'video_height' : {
+                    'type' : 'string',
+                    'bring' : '[video_height]',
+                    'default' : ''
+                }
+            }
         }
-    }}
+    }
+
 
     return json.dumps(new_policy)
 
@@ -262,6 +302,17 @@ def declare_policy(raw_policy, anylog_conn:str):
         'User-Agent': 'AnyLog/1.23'
     }
     __support__.rest_request(method='POST', url=f"http://{anylog_conn}", headers=headers, data_payload=new_policy)
+
+def check_mqtt(anylog_conn:str, topic:str):
+    output = False
+    headers = {
+        "command": f"get msg client where topic={topic}",
+        "User-Agent": "AnyLog/1.23"
+    }
+    response = __support__.rest_request(method='GET', url=f"http://{anylog_conn}", headers=headers)
+    if response.text != 'No such client subscription':
+        output = True
+    return output
 
 
 #--- REST POST Client ---
