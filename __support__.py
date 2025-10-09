@@ -87,12 +87,30 @@ def validate_timestamp_format(timestamp:str):
         "%Y-%m-%dT%H:%M:%S": r'^(\d{4})-(0[1-9]|1[0-2])-([0-2]\d|3[01])T([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$',
         "%Y-%m-%dT%H:%M:%SZ": r'^(\d{4})-(0[1-9]|1[0-2])-([0-2]\d|3[01])T([01]\d|2[0-3]):([0-5]\d):([0-5]\d)Z$',
         "%Y-%m-%d %H:%M:%S.%f": r'^(\d{4})-(0[1-9]|1[0-2])-([0-2]\d|3[01])\s([01]\d|2[0-3]):([0-5]\d):([0-5]\d)\.\d+$',
-        "%Y-%m-%dT%H:%M:%S.%fZ": r'^(\d{4})-(0[1-9]|1[0-2])-([0-2]\d|3[01])T([01]\d|2[0-3]):([0-5]\d):([0-5]\d)\.\d+Z$'
+        "%Y-%m-%dT%H:%M:%S.%fZ": r'^(\d{4})-(0[1-9]|1[0-2])-([0-2]\d|3[01])T([01]\d|2[0-3]):([0-5]\d):([0-5]\d)\.\d+Z$',
+        "%Y-%m-%dT%H:%M:%S.%f%z": [
+            r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+[+-]\d{2}:\d{2}$",
+            r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?[+-]\d{4}$"
+        ]
     }
-
-    output = None
     if timestamp:
         for frmt, regex in formats.items():
-            if re.match(regex, timestamp):
-                output = datetime.datetime.strptime(timestamp, frmt)
-    return output
+            if isinstance(regex, list):
+                # multiple regexes for this format
+                for r in regex:
+                    if re.fullmatch(r, timestamp):
+                        ts = timestamp
+                        # handle offset with colon for %z
+                        if '%z' in frmt and ts[-3] == ':':
+                            ts = ts[:-3] + ts[-2:]  # convert -04:00 -> -0400
+                        return datetime.datetime.strptime(ts, frmt)
+            else:
+                if re.fullmatch(regex, timestamp):
+                    ts = timestamp
+                    # handle Z as +0000 for %z
+                    if frmt.endswith('Z'):
+                        ts = ts.replace('Z', '+0000')
+                        frmt = frmt.replace('Z', '%z')
+                    return datetime.datetime.strptime(ts, frmt)
+
+    return None

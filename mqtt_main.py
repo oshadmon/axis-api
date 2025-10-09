@@ -1,9 +1,9 @@
+import datetime
 import random
 import paho.mqtt.client as mqtt_client
 import ast
 import base64
 
-import anylog_support
 from __support__ import  validate_timestamp_format
 from camera_functions import list_recordings, export_recording
 
@@ -22,28 +22,50 @@ VIDEO_USER = "AnyLog"
 VIDEO_PASSWORD = "OriIsTheBest#1!"
 
 
-def get_video(timestamp:str):
-    current_timestamp = validate_timestamp_format(timestamp)
+def get_video(timestamp: str):
+    current_dt = validate_timestamp_format(timestamp)
+    if not current_dt:
+        return None
 
-    all_videos = list_recordings(base_url=BASE_URL, user=VIDEO_USER, password=VIDEO_PASSWORD)
-    for video in all_videos:
-        start_time = validate_timestamp_format(timestamp=video['@starttime'])
-        end_time = validate_timestamp_format(timestamp=video['@stoptime'])
+    for video in list_recordings(base_url=BASE_URL, user=VIDEO_USER, password=VIDEO_PASSWORD):
+        start = validate_timestamp_format(video.get('@starttimelocal'))
+        end = validate_timestamp_format(video.get('@stoptimelocal'))
 
-        if start_time <= current_timestamp <= end_time:
-            recording_info = {
-                "video_id": video['@recordingid'],
-                "start_time": video['@starttime'],
-                "end_time": video['@stoptime'],
-                "source": video['@source'],
-                "video_resolution": video['video']['@resolution'],
-                "video_width": video['video']['@width'],
-                "video_height": video['video']['@height']
+        if start and end and start <= current_dt <= end:
+            recording_id = video.get('@recordingid')
+            content, _, _ = export_recording(base_url=BASE_URL, user=VIDEO_USER, password=VIDEO_PASSWORD, record_id=recording_id)
+            payload = {
+                "start_time": video.get('@starttime'),
+                "end_time": video.get('@stoptime'),
+                "recording_id": recording_id,
+                "content": base64.b64encode(content).decode('utf-8'),
+                "file_type": "mp4"
             }
-            content, _, _ = export_recording(base_url=BASE_URL, user=VIDEO_USER, password=VIDEO_PASSWORD, record_id=video['@recordingid'])
-            recording_info['content'] = base64.b64encode(content).decode('utf-8')
-            recording_info['file_type'] = 'mp4'
-            return recording_info
+            return payload
+
+    return None
+
+    # for video in all_videos:
+    #
+    #     start_time =
+    #     end_time =
+    #     if not end_time:
+    #         end_time = datetime.datetime.now()
+    #
+    #     if start_time <= current_timestamp <= end_time:
+    #         recording_info = {
+    #             "video_id": video['@recordingid'],
+    #             "start_time": video['@starttime'],
+    #             "end_time": video['@stoptime'],
+    #             "source": video['@source'],
+    #             "video_resolution": video['video']['@resolution'],
+    #             "video_width": video['video']['@width'],
+    #             "video_height": video['video']['@height']
+    #         }
+    #         content, _, _ = export_recording(base_url=BASE_URL, user=VIDEO_USER, password=VIDEO_PASSWORD, record_id=video['@recordingid'])
+    #         recording_info['content'] = base64.b64encode(content).decode('utf-8')
+    #         recording_info['file_type'] = 'mp4'
+    #         return recording_info
     return None
 
 
@@ -73,7 +95,34 @@ class MqttClient:
     def on_message(self, client, userdata, msg):
         print(f"\n📨 Message received on {msg.topic}:")
         content = ast.literal_eval(msg.payload.decode().strip())
-        recording_info = get_video(timestamp='2025-10-09T11:03:33.344706Z')
+        content = {
+            "topic":"axis:CameraApplicationPlatform/ObjectAnalytics/Device1ScenarioANY",
+            "timestamp":1759713693673,
+            "serial":"B8A44FC5C075",
+            "message":{
+                "source":{},
+                "key":{},
+                "data":{
+                    "objectId":"370312",
+                    "active":"0",
+                    "classTypes":"human",
+                    "triggerTime": "2025-10-09T11:57:22.928315-04:00" # "2025-10-09T12:00:33.856-0400"
+                }
+            }
+        }
+
+        # timestamp = content['message']['data']['triggerTime']
+        payload = {
+            "serial": content.get('serial'),
+            "timestamp": content.get('timestamp'),
+            "object_id": content['message']['data'].get('objectId'),
+            "object": content['message']['data'].get('classTypes'),
+            "active": True if content['message']['data'].get('active') is 1 else False,
+        }
+        video_payload = get_video(timestamp=content['message']['data']['triggerTime'])
+        payload.update(video_payload)
+
+        print(payload)
         exit(1)
 
 if __name__ == "__main__":
