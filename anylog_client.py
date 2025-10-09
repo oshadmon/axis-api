@@ -1,5 +1,6 @@
 import argparse
 import datetime
+import time
 
 import anylog_support
 from __support__ import extract_credentials, validate_timestamp_format
@@ -110,6 +111,8 @@ def main():
             args.start_timestamp = __publish_recording(anylog_conn=args.anylog_conn, base_url=base_url, user=user,
                                                        password=password, dbms=args.dbms, table=args.table,
                                                        topic=args.topic, start_timestamp=args.start_timestamp)
+
+            time.sleep(30)
     else:
         args.start_timestamp = __publish_recording(anylog_conn=args.anylog_conn, base_url=base_url, user=user,
                                                    password=password, dbms=args.dbms, table=args.table,

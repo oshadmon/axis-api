@@ -310,7 +310,7 @@ def check_mqtt(anylog_conn:str, topic:str):
         "User-Agent": "AnyLog/1.23"
     }
     response = __support__.rest_request(method='GET', url=f"http://{anylog_conn}", headers=headers)
-    if response.text != 'No such client subscription':
+    if response.text.strip() not in ['No message client subscriptions', 'No such client subscription']:
         output = True
     return output
 
@@ -362,4 +362,4 @@ def publish_data(anylog_conn:str, payload:dict, topic:str='axies'):
     }
 
     __support__.rest_request(method='POST', url=f'http://{anylog_conn}', headers=headers,
-                             data_payload=serialized_payload, stream=True)
+                             data_payload=serialized_payload, stream=True, timeout=120)

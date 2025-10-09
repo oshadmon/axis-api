@@ -29,10 +29,8 @@ def main():
     if not anylog_support.check_mqtt(anylog_conn=args.anylog_conn, topic=f"{args.topic}-insight"):
         anylog_support.declare_mqtt_request(anylog_conn=args.anylog_conn, broker='172.104.228.251', port=1883,
                                             user='anyloguser', password='mqtt4AnyLog!',
-                                            topic="axis/B8A44FC5C075/event/tns:axis/CameraApplicationPlatform/#",
+                                            topic="axis/B8A44FC5C075/event/tns:axis/CameraApplicationPlatform/ObjectAnalytics/Device1ScenarioANY",
                                             policy_id=f"{args.topic}-insight")
-
-
 
 if __name__ == '__main__':
     main()
