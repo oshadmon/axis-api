@@ -1,11 +1,12 @@
-import datetime
 import random
 import paho.mqtt.client as mqtt_client
-import ast
 import base64
+import os
+import json
 
-from __support__ import  validate_timestamp_format
-from camera_functions import list_recordings, export_recording
+import camera_functions
+from __support__ import  validate_timestamp_format, rest_request, sort_timestamps
+from camera_functions import list_recordings
 
 
 # MQTT Broker details
@@ -13,8 +14,8 @@ BROKER = "172.104.228.251"
 PORT = 1883
 USER = "anyloguser"
 PASSWORD = "mqtt4AnyLog!"
+# TOPIC = "axis/B8A44FC5C075/event/tns:axis/CameraApplicationPlatform/ObjectAnalytics/Device1ScenarioANY"
 TOPIC = "power-plant"
-CLIENT_ID = f"mqtt-client-{random.randint(0, 1000)}"
 
 # video credentials
 BASE_URL = "166.143.227.89"
@@ -22,56 +23,53 @@ VIDEO_USER = "AnyLog"
 VIDEO_PASSWORD = "OriIsTheBest#1!"
 
 
-def get_video(timestamp: str):
+def snapshot():
+    camera_functions.take_snapshot(base_url=BASE_URL, user=VIDEO_USER, password=VIDEO_PASSWORD)
+    filepath = os.path.join('data', 'snapshot.jpg')
+
+    with open(filepath, 'rb') as fwrite:
+        encoded_string = base64.b64encode(fwrite.read()).decode("utf-8")
+
+    return encoded_string
+
+
+def get_video(timestamp:str):
     current_dt = validate_timestamp_format(timestamp)
     if not current_dt:
         return None
 
-    for video in list_recordings(base_url=BASE_URL, user=VIDEO_USER, password=VIDEO_PASSWORD):
-        start = validate_timestamp_format(video.get('@starttimelocal'))
-        end = validate_timestamp_format(video.get('@stoptimelocal'))
+    recordings  = list_recordings(base_url=BASE_URL, user=VIDEO_USER, password=VIDEO_PASSWORD)
+    recordings = sort_timestamps(recordings)
+    recording_id = recordings[0].get('@recordingid')
 
-        if start and end and start <= current_dt <= end:
-            recording_id = video.get('@recordingid')
-            content, _, _ = export_recording(base_url=BASE_URL, user=VIDEO_USER, password=VIDEO_PASSWORD, record_id=recording_id)
-            payload = {
-                "start_time": video.get('@starttime'),
-                "end_time": video.get('@stoptime'),
-                "recording_id": recording_id,
-                "content": base64.b64encode(content).decode('utf-8'),
-                "file_type": "mp4"
-            }
-            return payload
+    for recording in recordings:
+        start = validate_timestamp_format(recording.get('@starttimelocal'))
+        end = validate_timestamp_format(recording.get('@stoptimelocal'))
+        if (start and end) and start <= current_dt <= end:
+            recording_id = recording.get('@recordingid')
+        elif (start and not end) and  start <= current_dt:
+            recording_id = recording.get('@recordingid')
 
-    return None
+    return recording_id
 
-    # for video in all_videos:
+# for video in list_recordings(base_url=BASE_URL, user=VIDEO_USER, password=VIDEO_PASSWORD):
     #
-    #     start_time =
-    #     end_time =
-    #     if not end_time:
-    #         end_time = datetime.datetime.now()
-    #
-    #     if start_time <= current_timestamp <= end_time:
-    #         recording_info = {
-    #             "video_id": video['@recordingid'],
-    #             "start_time": video['@starttime'],
-    #             "end_time": video['@stoptime'],
-    #             "source": video['@source'],
-    #             "video_resolution": video['video']['@resolution'],
-    #             "video_width": video['video']['@width'],
-    #             "video_height": video['video']['@height']
+
+    #         # content, _, _ = export_recording(base_url=BASE_URL, user=VIDEO_USER, password=VIDEO_PASSWORD, record_id=recording_id)
+    #         payload = {
+    #             "start_time": video.get('@starttime'),
+    #             "end_time": video.get('@stoptime'),
+    #             "recording_id": recording_id,
+    #             # "video": base64.b64encode(content).decode('utf-8'), # mp4
     #         }
-    #         content, _, _ = export_recording(base_url=BASE_URL, user=VIDEO_USER, password=VIDEO_PASSWORD, record_id=video['@recordingid'])
-    #         recording_info['content'] = base64.b64encode(content).decode('utf-8')
-    #         recording_info['file_type'] = 'mp4'
-    #         return recording_info
-    return None
+    #         return payload
+
+    # return None
 
 
 class MqttClient:
     def __init__(self):
-        self.client = mqtt_client.Client(client_id=CLIENT_ID)
+        self.client = mqtt_client.Client(client_id=f"mqtt-client-{random.randint(0, 1000)}")
         self.client.username_pw_set(USER, PASSWORD)
         self.client.on_connect = self.on_connect
         self.client.on_message = self.on_message
@@ -94,7 +92,7 @@ class MqttClient:
 
     def on_message(self, client, userdata, msg):
         print(f"\n📨 Message received on {msg.topic}:")
-        content = ast.literal_eval(msg.payload.decode().strip())
+        # content = ast.literal_eval(msg.payload.decode().strip())
         content = {
             "topic":"axis:CameraApplicationPlatform/ObjectAnalytics/Device1ScenarioANY",
             "timestamp":1759713693673,
@@ -112,18 +110,29 @@ class MqttClient:
         }
 
         # timestamp = content['message']['data']['triggerTime']
+        serial = content.get('serial')
         payload = {
-            "serial": content.get('serial'),
+            "table": f"camera_{serial}" if serial else "camera_unknown",
+            "recording_id": get_video(timestamp=content['message']['data'].get('triggerTime')),
             "timestamp": content.get('timestamp'),
             "object_id": content['message']['data'].get('objectId'),
             "object": content['message']['data'].get('classTypes'),
-            "active": True if content['message']['data'].get('active') is 1 else False,
+            "active": True if content['message']['data'].get('active') == 1 else False,
+            "snapshot": snapshot(),  # jpg
         }
-        video_payload = get_video(timestamp=content['message']['data']['triggerTime'])
-        payload.update(video_payload)
+        # video_payload = get_video(timestamp=content['message']['data']['triggerTime'])
+        # if video_payload:
+        #     payload.update(video_payload)
 
-        print(payload)
-        exit(1)
+        rest_request(method='POST', url='http://173.255.230.238:32149',
+                     headers={
+                         'command': 'data',
+                         'topic': 'axis-new',
+                         'User-Agent': 'AnyLog/1.23',
+                         'Content-Type': 'text/plain'
+                     }, data_payload=json.dumps(payload))
+
+        # exit(1)
 
 if __name__ == "__main__":
     # get_video(timestamp='2025-10-09T11:03:33.344706Z')

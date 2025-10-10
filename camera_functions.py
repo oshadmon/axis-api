@@ -1,4 +1,6 @@
 import ast
+import os
+
 from __support__ import rest_request, convert_xml
 
 #--- Configurations --
@@ -175,6 +177,27 @@ def get_analytics(base_url:str, user:str, password:str):
 
     response = rest_request(method='POST', url=url, user=user, password=password, json_payload=payload)
     print(response)
+
+
+def take_snapshot(base_url:str, user:str, password:str):
+    """
+    Capture a snapshot image from the Axis camera
+    """
+    if not os.path.isdir('data'):
+        os.makedirs('data')
+    filename = os.path.join('data', 'snapshot.jpg')
+
+    url = f"{base_url}/axis-cgi/jpg/image.cgi"
+    if not base_url.startswith("http"):
+        url = f"https://{url}"
+    response = rest_request(method="GET", url=url, user=user, password=password, stream=True)
+    if not 200 <= int(response.status_code) < 300:
+        raise Exception(f"Failed to capture snapshot (HTTP {response.status_code})")
+
+    with open(filename, "wb") as f:
+        f.write(response.content)
+
+    return f"Snapshot saved to {filename}"
 
 
 if __name__ == '__main__':

@@ -4,6 +4,75 @@ import json
 from camera_functions import list_recordings
 
 #---- Create Policies ---
+def create_merged_policy(policy_name:str, dbms:str="bring [dbms]", table:str="bring [table]"):
+    new_policy = {
+        "mapping": {
+            'id': policy_name,
+            'name': policy_name,
+            'dbms': dbms,
+            'table': "bring [table]",
+            'schema': {
+                "timestamp": {
+                    "type": "timestamp",
+                    "bring": "[timestamp]",
+                    "default": "now()"
+                },
+                # "camera_serial_number": {
+                #     "type": "string",
+                #     "bring": "[serial]",
+                #     "default": ""
+                # },
+                "object_id": {
+                    "type": "string",
+                    "bring": "[object_id]",
+                    "default": ""
+                },
+                "object": {
+                    "type": "string",
+                    "bring": "[object]",
+                    "default": ""
+                },
+                "active": {
+                    "type": "bool",
+                    "bring": "[active]",
+                    "default": False
+                },
+                "start_time": {
+                    "type": "timestamp",
+                    "bring": "[start_time]",
+                    "default": "now()"
+                },
+                "end_time": {
+                    "type": "timestamp",
+                    "bring": "[end_time]",
+                    "default": "now()"
+                },
+                "recording_id": {
+                    "type": "string",
+                    "bring": "[recording_id]",
+                    "default": ""
+                },
+                # 'video': {
+                #     "blob": True,
+                #     "bring": "[video]",
+                #     "extension": "mp4",
+                #     "apply": "base64decoding",
+                #     "hash": "md5",
+                #     "type": "varchar"
+                # },
+                'file': {
+                    "blob": True,
+                    "bring": "[snapshot]",
+                    "extension": "jpeg",
+                    "apply": "base64decoding",
+                    "hash": "md5",
+                    "type": "varchar"
+                }
+            }}
+    }
+
+    return new_policy
+
 def create_camera_policy(base_url:str, user:str, password:str):
     """
     Create camera information policy

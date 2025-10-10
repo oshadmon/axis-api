@@ -106,5 +106,9 @@ def recording_export(record_id:str=None):
 def get_logs():
     return camera_functions.get_logs(base_url=BASE_URL, user=USER, password=PASSWORD)
 
+@app.route("/snapshot", methods=["GET"])
+def snapshot():
+    return camera_functions.take_snapshot(base_url=BASE_URL, user=USER, password=PASSWORD)
+
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=False, use_reloader=False)

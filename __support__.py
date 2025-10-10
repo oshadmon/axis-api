@@ -78,10 +78,12 @@ def camel_to_snake(name: str) -> str:
     s1 = re.sub(r'(.)([A-Z][a-z]+)', r'\1_\2', name)
     return re.sub(r'([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
-def validate_timestamp_format(timestamp:str):
+def validate_timestamp_format(timestamp:(str or datetime.datetime)):
     """
     Convert string timestamp to datetime format
     """
+    if isinstance(timestamp, datetime.datetime):
+        return timestamp
     formats = {
         "%Y-%m-%d %H:%M:%S": r'^(\d{4})-(0[1-9]|1[0-2])-([0-2]\d|3[01])\s([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$',
         "%Y-%m-%dT%H:%M:%S": r'^(\d{4})-(0[1-9]|1[0-2])-([0-2]\d|3[01])T([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$',
@@ -114,3 +116,12 @@ def validate_timestamp_format(timestamp:str):
                     return datetime.datetime.strptime(ts, frmt)
 
     return None
+
+
+def sort_timestamps(recordings):
+    for recording_loc in range(len(recordings)):
+        recordings[recording_loc]['@starttimelocal'] = validate_timestamp_format(timestamp=recordings[recording_loc]['@starttimelocal'])
+
+    valid_recordings = [r for r in recordings if r['@starttimelocal'] is not None]
+    valid_recordings.sort(key=lambda x: x['@starttimelocal'], reverse=True)
+    return valid_recordings
