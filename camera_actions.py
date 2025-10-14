@@ -3,9 +3,9 @@ from flask import Flask, jsonify
 import camera_functions
 from __support__ import extract_credentials
 app = Flask(__name__)
-BASE_URL = "166.143.227.89"
-USER = "AnyLog"
-PASSWORD = "OriIsTheBest#1!"
+BASE_URL = ""
+USER = ""
+PASSWORD = ""
 
 #--- Credentials --
 def configure_client(camera_conn:str=None):

@@ -24,7 +24,7 @@ def main():
     topic = "axis/B8A44FC5C075/event/tns:axis/CameraApplicationPlatform/ObjectAnalytics/Device1ScenarioANY"
     is_policy = anylog_support.check_policy(anylog_conn=args.anylog_conn, where_condition={"id": f"{args.topic}-insight"})
     if not is_policy:
-        policy = anylog_support.create_data_mapping_policy(policy_name=f"{args.topic}-insight", dbms='axis', table="camera_insight",)
+        policy = anylog_support.create_data_mapping_policy(policy_name=f"{args.topic}-insight", dbms='axis', table="camera_insight", )
         anylog_support.declare_policy(raw_policy=policy, anylog_conn=args.anylog_conn)
 
     if not anylog_support.check_mqtt(anylog_conn=args.anylog_conn, topic=topic):
@@ -34,7 +34,7 @@ def main():
 
     is_policy = anylog_support.check_policy(anylog_conn=args.anylog_conn, where_condition={"id": f"{args.topic}-new"})
     if not is_policy:
-        policy = anylog_support.create_merged_policy(policy_name=f"{args.topic}-new", dbms='axis', table="camera_insight2",)
+        policy = anylog_support.create_merged_policy(policy_name=f"{args.topic}-new", dbms='axis', table="camera_insight2", )
         anylog_support.declare_policy(raw_policy=policy, anylog_conn=args.anylog_conn)
 
     if not anylog_support.check_mqtt(anylog_conn=args.anylog_conn, topic=f"{args.topic}-new"):

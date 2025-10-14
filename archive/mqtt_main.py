@@ -18,14 +18,14 @@ PASSWORD = "mqtt4AnyLog!"
 TOPIC = "power-plant"
 
 # video credentials
-BASE_URL = "166.143.227.89"
-VIDEO_USER = "AnyLog"
-VIDEO_PASSWORD = "OriIsTheBest#1!"
+BASE_URL = ""
+VIDEO_USER = ""
+VIDEO_PASSWORD = ""
 
 
 def snapshot():
     camera_functions.take_snapshot(base_url=BASE_URL, user=VIDEO_USER, password=VIDEO_PASSWORD)
-    filepath = os.path.join('data', 'snapshot.jpg')
+    filepath = os.path.join('../data', 'snapshot.jpg')
 
     with open(filepath, 'rb') as fwrite:
         encoded_string = base64.b64encode(fwrite.read()).decode("utf-8")
