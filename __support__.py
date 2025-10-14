@@ -107,12 +107,12 @@ def convert_xml(content:str)->dict:
         raise Exception(f"Failed to convert content from XML to dict")
 
 
-def sort_timestamps(recordings):
+def sort_timestamps(recordings, newest:bool=True):
     for recording_loc in range(len(recordings)):
         recordings[recording_loc]['@starttimelocal'] = validate_timestamp_format(timestamp=recordings[recording_loc]['@starttimelocal'])
 
     valid_recordings = [r for r in recordings if r['@starttimelocal'] is not None]
-    valid_recordings.sort(key=lambda x: x['@starttimelocal'], reverse=True)
+    valid_recordings.sort(key=lambda x: x['@starttimelocal'], reverse=newest)
     return valid_recordings
 
 

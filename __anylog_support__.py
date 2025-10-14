@@ -60,7 +60,8 @@ def create_mapping_policy(policy_name:str, dbms:str="bring [dbms]", table:str="b
                 "timestamp": {
                     "type": "timestamp",
                     "bring": "[timestamp]",
-                    "default": "now()"
+                    "default": "now()",
+                    "apply": "epoch_to_datetime"
                 },
                 "object_id": {
                     "type": "string",
@@ -87,10 +88,15 @@ def create_mapping_policy(policy_name:str, dbms:str="bring [dbms]", table:str="b
                     "bring": "[end_time]",
                     "default": "now()"
                 },
-                "recording_id": {
+                "recording": {
                     "type": "string",
-                    "bring": "[recording_id]",
+                    "bring": "[recording]",
                     "default": ""
+                },
+                "recording_status": {
+                    "type": "string",
+                    "bring": "[recording_status]",
+                    "default": "unknown"
                 },
                 'file': {
                     "blob": True,
@@ -154,4 +160,14 @@ def declare_mqtt_request(anylog_conn:str, broker:str, topic:str, policy_id:str, 
     return response
 
 
+def publish_data(anylog_conn:str, payload:dict, topic:str='axies'):
+    serialized_payload = json.dumps(payload)
+    headers = {
+        'command': 'data',
+        'topic': topic,
+        'User-Agent': 'AnyLog/1.23',
+        'Content-Type': 'text/plain'
+    }
 
+    __support__.rest_request(method='POST', url=f'http://{anylog_conn}', headers=headers,
+                             data_payload=serialized_payload, stream=True, timeout=120)

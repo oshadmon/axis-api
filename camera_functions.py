@@ -140,6 +140,27 @@ def export_recording(base_url:str, user:str, password:str, record_id:str):
         },
     )
 
+# def get_recording_id(base_url:str, user:str, password:str, timestamp:str):
+#     current_dt = validate_timestamp_format(timestamp)
+#     if not current_dt:
+#         return None
+#
+#     recordings  = list_recordings(base_url=base_url, user=user, password=password)
+#     recordings = sort_timestamps(recordings=recordings, newest=True)
+#     recording_id = recordings[0].get('@recordingid')
+#
+#     for recording in recordings:
+#         start = validate_timestamp_format(recording.get('@starttimelocal'))
+#         end = validate_timestamp_format(recording.get('@stoptimelocal'))
+#         if (start and end) and start <= current_dt <= end:
+#             recording_id = recording.get('@recordingid')
+#         elif (start and not end) and  start <= current_dt:
+#             recording_id = recording.get('@recordingid')
+#
+#     return recording_id
+
+
+
 #---- Analytics ---
 def get_scenerios(base_url:str, user:str, password:str):
     url = f"{base_url}/axis-cgi/applications/control.cgi"
@@ -180,10 +201,6 @@ def take_snapshot(base_url:str, user:str, password:str):
     """
     Capture a snapshot image from the Axis camera
     """
-    if not os.path.isdir('data'):
-        os.makedirs('data')
-    filename = os.path.join('data', 'snapshot.jpg')
-
     url = f"{base_url}/axis-cgi/jpg/image.cgi"
     if not base_url.startswith("http"):
         url = f"https://{url}"
@@ -191,10 +208,9 @@ def take_snapshot(base_url:str, user:str, password:str):
     if not 200 <= int(response.status_code) < 300:
         raise Exception(f"Failed to capture snapshot (HTTP {response.status_code})")
 
-    with open(filename, "wb") as f:
-        f.write(response.content)
+    return response.content
 
-    return f"Snapshot saved to {filename}"
+    # return f"Snapshot saved to {filename}"
 
 #--- Other functions ---
 def id_by_timestamp(base_url:str, user:str, password:str, timestamp:str):
