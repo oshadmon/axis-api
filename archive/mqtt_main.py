@@ -33,24 +33,6 @@ def snapshot():
     return encoded_string
 
 
-def get_video(timestamp:str):
-    current_dt = validate_timestamp_format(timestamp)
-    if not current_dt:
-        return None
-
-    recordings  = list_recordings(base_url=BASE_URL, user=VIDEO_USER, password=VIDEO_PASSWORD)
-    recordings = sort_timestamps(recordings)
-    recording_id = recordings[0].get('@recordingid')
-
-    for recording in recordings:
-        start = validate_timestamp_format(recording.get('@starttimelocal'))
-        end = validate_timestamp_format(recording.get('@stoptimelocal'))
-        if (start and end) and start <= current_dt <= end:
-            recording_id = recording.get('@recordingid')
-        elif (start and not end) and  start <= current_dt:
-            recording_id = recording.get('@recordingid')
-
-    return recording_id
 
 # for video in list_recordings(base_url=BASE_URL, user=VIDEO_USER, password=VIDEO_PASSWORD):
     #

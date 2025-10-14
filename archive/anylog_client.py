@@ -53,7 +53,7 @@ def __publish_recording(anylog_conn:str, base_url:str, user:str, password:str, d
                 payload.update(recording_info)
 
                 # publish payload
-                anylog_support.publish_data(anylog_conn=anylog_conn, payload=payload, topic=topic)
+                anylog_support.publish_data(anylog_conn=anylog_cfonn, payload=payload, topic=topic)
 
     return video_timestamp_str # last video timestamp
 

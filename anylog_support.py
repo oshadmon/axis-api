@@ -4,10 +4,6 @@ import json
 from camera_functions import list_recordings
 
 #---- Create Policies ---
-
-
-
-
 def create_data_mapping_policy(policy_name:str, dbms:str="bring [dbms]", table:str="bring [table]")->str:
     """
     Generate policy to accept data from Axis camera

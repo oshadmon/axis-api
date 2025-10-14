@@ -1,6 +1,5 @@
 import argparse
 import time
-
 import  anylog_support
 
 def main():

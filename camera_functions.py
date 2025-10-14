@@ -1,7 +1,7 @@
 import ast
 import os
 
-from __support__ import rest_request, convert_xml
+from __support__ import rest_request, convert_xml, validate_timestamp_format, sort_timestamps
 
 #--- Configurations --
 def camera_status(base_url:str, user:str, password:str):
@@ -109,7 +109,6 @@ def __get_recordings(base_url:str, user:str, password:str):
 
     return videos
 
-
 def list_recordings(base_url:str, user:str, password:str, record_id:str=None):
     recordings = __get_recordings(base_url=base_url, user=user, password=password)
     if record_id:
@@ -156,7 +155,6 @@ def get_scenerios(base_url:str, user:str, password:str):
     response = rest_request(method='POST', url=url, user=user, password=password, json_payload=payload, stream=True)
     print(response)
 
-
 def get_analytics(base_url:str, user:str, password:str):
     url = f"{base_url}/local/objectanalytics/control.cgi"
     if not base_url.startswith('http'):
@@ -178,7 +176,6 @@ def get_analytics(base_url:str, user:str, password:str):
     response = rest_request(method='POST', url=url, user=user, password=password, json_payload=payload)
     print(response)
 
-
 def take_snapshot(base_url:str, user:str, password:str):
     """
     Capture a snapshot image from the Axis camera
@@ -199,9 +196,22 @@ def take_snapshot(base_url:str, user:str, password:str):
 
     return f"Snapshot saved to {filename}"
 
+#--- Other functions ---
+def id_by_timestamp(base_url:str, user:str, password:str, timestamp:str):
+    current_dt = validate_timestamp_format(timestamp)
+    if not current_dt:
+        return None
 
-if __name__ == '__main__':
-    BASE_URL = "166.143.227.89"
-    USER = "AnyLog"
-    PASSWORD = "OriIsTheBest#1!"
-    get_scenerios(base_url=BASE_URL, user=USER, password=PASSWORD)
+    recordings  = list_recordings(base_url=base_url, user=user, password=password)
+    recordings = sort_timestamps(recordings)
+    recording_id = recordings[0].get('@recordingid')
+
+    for recording in recordings:
+        start = validate_timestamp_format(recording.get('@starttimelocal'))
+        end = validate_timestamp_format(recording.get('@stoptimelocal'))
+        if (start and end) and start <= current_dt <= end:
+            recording_id = recording.get('@recordingid')
+        elif (start and not end) and  start <= current_dt:
+            recording_id = recording.get('@recordingid')
+
+    return recording_id
