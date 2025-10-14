@@ -1,18 +1,19 @@
 import re
-import requests
 from requests.auth import HTTPDigestAuth
+import requests
 import xmltodict
 import datetime
 
-import urllib3
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+def camel_to_snake(name: str) -> str:
+    """Convert CamelCase or PascalCase to snake_case."""
+    s1 = re.sub(r'(.)([A-Z][a-z]+)', r'\1_\2', name)
+    return re.sub(r'([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+
 
 def extract_credentials(conn_info:str)->(str, str, str):
     """
     Extract credentials based on conn_info
     """
-    auth = None
-    base_url = None
     user = None
     password = None
 
@@ -28,6 +29,91 @@ def extract_credentials(conn_info:str)->(str, str, str):
         raise ValueError(f"Video Connection format must be [USER:PASSWORD]@[IP:PORT]")
 
     return base_url, user, password
+
+
+def rest_request(method:str, url:str, headers:dict=None, data_payload:str=None, json_payload:dict=None, user:str=None,
+                 password:str=None, timeout:int=30, stream:bool=False):
+    """
+    Execute REST request
+    :args:
+        method:str - request method type (POST / GET)
+        url:str - URL to send request against
+        headers:dict - REST headers
+        data_payload:str - serialized payload
+        json_payload:dict - non-serialized payload
+        user:str | password:str - authentication credentials for REST request
+        timeout:int - REST timeout
+        stream:bool - stream results
+    :params:
+        auth:HTTPDigestAuth - authentication for request
+        response:requests.Request - request response
+    :return:
+        response
+    """
+    auth = HTTPDigestAuth(user, password) if user and password else None
+    try:
+        response = requests.request(method=method.upper(), url=url, headers=headers, data=data_payload,
+                                    json=json_payload, auth=auth, timeout=timeout, verify=False, stream=stream)
+        response.raise_for_status()
+    except Exception as error:
+        raise Exception(f"Failed to execute {method.upper()} against {url} (Error: {error})")
+    return response
+
+
+def check_policy(anylog_conn:str, where_condition:dict={})->bool:
+    """
+    Check whether a policy exists based on policy ID
+    :args:
+        anylog_conn:str - AnyLog REST connection information
+        policy_id:str - policy ID to check
+    :params:
+        status:bool
+    :return:
+        if exists return True else False
+    """
+    status = False
+    request_cmd = f"blockchain get *"
+    if where_condition:
+        request_cmd += " where "
+        for condition in where_condition:
+            request_cmd += f'{condition}={where_condition[condition]} and'
+        request_cmd = request_cmd.rsplit(" and", 1)[0]
+
+    headers = {
+        "command": request_cmd,
+        "User-Agent": "AnyLog/1.23"
+    }
+    response = rest_request(method='GET', url=f"http://{anylog_conn}", headers=headers)
+    try:
+        if response.json():
+            status = True
+    except:
+        pass
+
+    return status
+
+
+def convert_xml(content:str)->dict:
+    """
+    Convert XML content to dict
+    :args:
+        content:str - XML content in string fromat
+    :return:
+        content as dict
+    """
+    try:
+        return xmltodict.parse(content)
+    except Exception as error:
+        raise Exception(f"Failed to convert content from XML to dict")
+
+
+def sort_timestamps(recordings):
+    for recording_loc in range(len(recordings)):
+        recordings[recording_loc]['@starttimelocal'] = validate_timestamp_format(timestamp=recordings[recording_loc]['@starttimelocal'])
+
+    valid_recordings = [r for r in recordings if r['@starttimelocal'] is not None]
+    valid_recordings.sort(key=lambda x: x['@starttimelocal'], reverse=True)
+    return valid_recordings
 
 
 def validate_timestamp_format(timestamp:(str or datetime.datetime)):
@@ -70,119 +156,3 @@ def validate_timestamp_format(timestamp:(str or datetime.datetime)):
     return None
 
 
-
-def rest_request(method:str, url:str, headers:dict=None, data_payload:str=None, json_payload:dict=None, user:str=None,
-                 password:str=None, timeout:int=30, stream:bool=False):
-    """
-    Execute REST request
-    :args:
-        method:str - request method type (POST / GET)
-        url:str - URL to send request against
-        headers:dict - REST headers
-        data_payload:str - serialized payload
-        json_payload:dict - non-serialized payload
-        user:str | password:str - authentication credentials for REST request
-        timeout:int - REST timeout
-        stream:bool - stream results
-    :params:
-        auth:HTTPDigestAuth - authentication for request
-        response:requests.Request - request response
-    :return:
-        response
-    """
-    auth = HTTPDigestAuth(user, password) if user and password else None
-    try:
-        response = requests.request(method=method.upper(), url=url, headers=headers, data=data_payload,
-                                    json=json_payload, auth=auth, timeout=timeout, verify=False, stream=stream)
-        response.raise_for_status()
-    except Exception as error:
-        raise Exception(f"Failed to execute {method.upper()} against {url} (Error: {error})")
-    return response
-
-
-def convert_xml(content:str)->dict:
-    """
-    Convert XML content to dict
-    :args:
-        content:str - XML content in string fromat
-    :return:
-        content as dict
-    """
-    try:
-        return xmltodict.parse(content)
-    except Exception as error:
-        raise Exception(f"Failed to convert content from XML to dict")
-
-
-
-def camel_to_snake(name: str) -> str:
-    """Convert CamelCase or PascalCase to snake_case."""
-    s1 = re.sub(r'(.)([A-Z][a-z]+)', r'\1_\2', name)
-    return re.sub(r'([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
-
-
-
-def sort_timestamps(recordings):
-    for recording_loc in range(len(recordings)):
-        recordings[recording_loc]['@starttimelocal'] = validate_timestamp_format(timestamp=recordings[recording_loc]['@starttimelocal'])
-
-    valid_recordings = [r for r in recordings if r['@starttimelocal'] is not None]
-    valid_recordings.sort(key=lambda x: x['@starttimelocal'], reverse=True)
-    return valid_recordings
-
-
-def create_merged_policy(policy_name:str, dbms:str="bring [dbms]", table:str="bring [table]"):
-    new_policy = {
-        "mapping": {
-            'id': policy_name,
-            'name': policy_name,
-            'dbms': dbms,
-            'table': table,
-            'schema': {
-                "timestamp": {
-                    "type": "timestamp",
-                    "bring": "[timestamp]",
-                    "default": "now()"
-                },
-                "object_id": {
-                    "type": "string",
-                    "bring": "[object_id]",
-                    "default": ""
-                },
-                "object": {
-                    "type": "string",
-                    "bring": "[object]",
-                    "default": ""
-                },
-                "active": {
-                    "type": "bool",
-                    "bring": "[active]",
-                    "default": False
-                },
-                "start_time": {
-                    "type": "timestamp",
-                    "bring": "[start_time]",
-                    "default": "now()"
-                },
-                "end_time": {
-                    "type": "timestamp",
-                    "bring": "[end_time]",
-                    "default": "now()"
-                },
-                "recording_id": {
-                    "type": "string",
-                    "bring": "[recording_id]",
-                    "default": ""
-                },
-                'file': {
-                    "blob": True,
-                    "bring": "[snapshot]",
-                    "extension": "jpeg",
-                    "apply": "base64decoding",
-                    "hash": "md5",
-                    "type": "varchar"
-                }
-            }}
-    }
-
-    return new_policy

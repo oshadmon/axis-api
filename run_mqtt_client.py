@@ -3,11 +3,12 @@ import random
 import paho.mqtt.client as mqtt_client
 import queue
 
+from __support__ import extract_credentials
+
 class MqttClient:
     def __init__(self, conn:str, topic:str):
-        part1, part2 = conn.split("@")
-        self.broker, self.port   = part2.split(":")
-        self.user, self.password = part1.split(":")
+        self.broker, self.user, self.pssword = extract_credentials(conn)
+        self.broker, self.port   = self.broker.split(":")
         self.topic = topic
         try:
             self.port = int(self.port)
@@ -39,11 +40,10 @@ class MqttClient:
         else:
             print(f"❌ Connection failed with code {rc}")
 
-    def on_message(self, client, userdata, msg):
+    def on_message(self, msg):
         # print(f"\n📨 Message received on {msg.topic}:")
         try:
             content = ast.literal_eval(msg.payload.decode().strip())
-        except Exception as error:
+        except Exception:
             content = msg.payload.decode().strip()
         self.queue.put(content)
-
