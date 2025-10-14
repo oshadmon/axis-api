@@ -1,7 +1,7 @@
 import argparse
 import __anylog_support__
 import __support__
-
+import remote_mqtt_client
 
 def main():
     parser = argparse.ArgumentParser()
@@ -13,8 +13,8 @@ def main():
 
     if not args.policy_id:
         args.policy_id = args.local_camera_topic
-
     camera_url, camera_user, camera_password = __support__.extract_credentials(conn_info=args.camera_conn)
+
     # create camera policy if DNE
     policy, serial = __anylog_support__.create_camera_policy(camera_url, camera_user, camera_password)
     is_policy = __support__.check_policy(anylog_conn=args.anylog_conn, where_condition={"serial_number": serial})
@@ -33,7 +33,16 @@ def main():
                                             topic=args.local_camera_topic,
                                             policy_id=args.policy_id)
 
-    # declare msg client
+
+    # msg_client = remote_mqtt_client.MqttClient(conn='anyloguser:mqtt4AnyLog!@172.104.228.251:1883',
+    #                                            topic='axis/B8A44FC5C075/event/tns:axis/CameraApplicationPlatform/ObjectAnalytics/Device1ScenarioANY')
+    msg_client = remote_mqtt_client.MqttClient(conn='anyloguser:mqtt4AnyLog!@172.104.228.251:1883', topic="power-plant")
+    msg_client.connect()
+    while True:
+        msg = msg_client.queue.get()
+        print(msg)
+
+
 
 if __name__ == '__main__':
     main()

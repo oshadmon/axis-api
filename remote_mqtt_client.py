@@ -7,7 +7,7 @@ from __support__ import extract_credentials
 
 class MqttClient:
     def __init__(self, conn:str, topic:str):
-        self.broker, self.user, self.pssword = extract_credentials(conn)
+        self.broker, self.user, self.password = extract_credentials(conn)
         self.broker, self.port   = self.broker.split(":")
         self.topic = topic
         try:
@@ -40,8 +40,7 @@ class MqttClient:
         else:
             print(f"❌ Connection failed with code {rc}")
 
-    def on_message(self, msg):
-        # print(f"\n📨 Message received on {msg.topic}:")
+    def on_message(self, client, userdata, msg):
         try:
             content = ast.literal_eval(msg.payload.decode().strip())
         except Exception:
