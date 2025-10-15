@@ -112,6 +112,85 @@ def create_mapping_policy(policy_name:str, dbms:str="bring [dbms]", table:str="b
 
     return json.dumps(new_policy)
 
+def create_video_mapping_policy(policy_name:str, dbms:str="bring [dbms]", table:str="bring [table]"):
+    new_policy = {
+        "mapping": {
+            'id': policy_name,
+            'name': policy_name,
+            'dbms': dbms,
+            'table': table,
+            'schema': {
+                "start_time": {
+                    "type": "timestamp",
+                    "bring": "[start_time]",
+                    "default": "now()"
+                },
+                "end_time": {
+                    "type": "timestamp",
+                    "bring": "[end_time]",
+                    "default": "now()"
+                },
+                "duration": {
+                    "type": "string", # need to support time
+                    "bring": "[duration]",
+                    "default": "00:00:00.000"
+                },
+                "recording": {
+                    "type": "string",
+                    "bring": "[recording]",
+                    "default": ""
+                },
+                "recording_type": {
+                    "type": "string",
+                    "bring": "[recording_type]",
+                    "default": ""
+                },
+                "event_id": {
+                    "type": "string",
+                    "bring": "[event_id]",
+                    "default": ""
+                },
+                "source": {
+                    "type": "int",
+                    "bring": "[source]",
+                    "default": 2
+                },
+                "mime_type": {
+                    "type": "string",
+                    "bring": "[mime_type]",
+                    "default": ""
+                },
+                "resolution": {
+                    "type": "string",
+                    "bring": "[resolution]",
+                    "default": ""
+                },
+                "frame_rate": {
+                    "type": "string",
+                    "bring": "[frame_rate]",
+                    "default": ""
+                },
+                "width": {
+                    "type": "int",
+                    "bring": "[width]"
+                },
+                "height": {
+                    "type": "int",
+                    "bring": "[height]"
+                },
+                'file': {
+                    "blob": True,
+                    "bring": "[file]",
+                    "extension": "mp4",
+                    "apply": "base64decoding",
+                    "hash": "md5",
+                    "type": "varchar"
+                }
+            }
+        }
+    }
+
+    return json.dumps(new_policy)
 
 
 def declare_policy(raw_policy, anylog_conn:str):
@@ -171,3 +250,17 @@ def publish_data(anylog_conn:str, payload:dict, topic:str='axies'):
 
     __support__.rest_request(method='POST', url=f'http://{anylog_conn}', headers=headers,
                              data_payload=serialized_payload, stream=True, timeout=120)
+
+
+def get_recordings(anylog_conn:str, table:str, dbms:str='axis'):
+    recordings = []
+    headers = {
+        'command': f"sql {dbms} format=json and stat=false select distinct(recording) as recording from {table}",
+        'User-Agent': 'AnyLog/1.23',
+        'destination': 'network'
+    }
+
+    output = __support__.rest_request(method='GET', url=f"http://{anylog_conn}", headers=headers)
+    for recording in output.json()['Query']:
+        recordings.append(recording['recording'])
+    return recordings

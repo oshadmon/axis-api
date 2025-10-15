@@ -46,3 +46,16 @@ class MqttClient:
         except Exception:
             content = msg.payload.decode().strip()
         self.queue.put(content)
+
+
+def mqtt_publish(conn:str, topic:str, message:str):
+    broker, port = conn.split(":")
+    port = int(port)
+    try:
+        client = mqtt_client.Client()
+        client.connect(host=broker, port=port,  keepalive=60)
+        result = client.publish(topic=topic, payload=message, qos=0)
+        result.wait_for_publish()
+        client.disconnect()
+    except Exception as error:
+        raise Exception(f"Failed to execute MQTT publish against {broker}:{port} (Error: {error})")
