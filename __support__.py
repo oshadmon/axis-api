@@ -156,6 +156,9 @@ def validate_timestamp_format(timestamp:(str or datetime.datetime)):
     return None
 
 def convert_to_utc(timestamp:(str or datetime.datetime)):
+    if timestamp == 'now':
+        timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
+
     updated_ts = validate_timestamp_format(timestamp=timestamp) # convert to datetime format
     if not updated_ts:
         raise ValueError("Invalid timestamp format")
