@@ -74,6 +74,7 @@ def build_payload(msg:dict, serial_id:str, logical_database:str, camera_url, cam
 
 
 def main():
+    print(f"Start Time: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')}")
     parser = argparse.ArgumentParser()
     parser.add_argument('anylog_conn', type=str, default='127.0.0.1:32149', help='Operator REST IP:Port')
     parser.add_argument('camera_conn', type=str, default='AnyLog:OriIsTheBest#1!@166.143.227.89', help='access information for Axis camera')
@@ -105,14 +106,14 @@ def main():
                                             policy_id=args.policy_id)
 
 
-    # msg_client = remote_mqtt_client.MqttClient(conn='anyloguser:mqtt4AnyLog!@172.104.228.251:1883',
-    #                                            topic='axis/B8A44FC5C075/event/tns:axis/CameraApplicationPlatform/ObjectAnalytics/Device1ScenarioANY')
+    msg_client = remote_mqtt_client.MqttClient(conn='anyloguser:mqtt4AnyLog!@172.104.228.251:1883',
+                                               topic='axis/B8A44FC5C075/event/tns:axis/CameraApplicationPlatform/ObjectAnalytics/Device1ScenarioANY')
 
-    msg_client = remote_mqtt_client.MqttClient(conn='anyloguser:mqtt4AnyLog!@172.104.228.251:1883', topic="power-plant")
+    # msg_client = remote_mqtt_client.MqttClient(conn='anyloguser:mqtt4AnyLog!@172.104.228.251:1883', topic="power-plant")
     msg_client.connect()
     while True:
         msg = msg_client.queue.get()
-        msg = __tmp_create_msg() # dummy message client payload
+        # msg = __tmp_create_msg() # dummy message client payload
 
         payload = build_payload(msg=msg, logical_database=args.logical_database, serial_id=serial, camera_url=camera_url,
                                 camera_user=camera_user, camera_password=camera_password)

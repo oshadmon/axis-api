@@ -1,7 +1,7 @@
 import ast
 import os
 
-from __support__ import rest_request, convert_xml, validate_timestamp_format, sort_timestamps
+from __support__ import rest_request, convert_xml, validate_timestamp_format, sort_timestamps, parse_logs
 
 #--- Configurations --
 def camera_status(base_url:str, user:str, password:str):
@@ -231,3 +231,16 @@ def id_by_timestamp(base_url:str, user:str, password:str, timestamp:str):
             recording_id = recording.get('@recordingid')
 
     return recording_id
+
+
+def get_syslogs(base_url:str, user:str, password:str):
+    url = f"{base_url}/axis-cgi/admin/systemlog.cgi"
+    if not base_url.startswith("http"):
+        url = f"https://{url}"
+
+    response = rest_request(method='GET', url=url, user=user, password=password)
+    content = response.content.decode() # 577 rows
+    parsed_logs = parse_logs(content=content)
+
+    return parsed_logs # 6 rows
+

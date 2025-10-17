@@ -107,12 +107,12 @@ def convert_xml(content:str)->dict:
         raise Exception(f"Failed to convert content from XML to dict")
 
 
-def sort_timestamps(recordings, newest:bool=True):
+def sort_timestamps(recordings:list, key_name:str='@starttimelocal', newest:bool=True):
     for recording_loc in range(len(recordings)):
-        recordings[recording_loc]['@starttimelocal'] = validate_timestamp_format(timestamp=recordings[recording_loc]['@starttimelocal'])
+        recordings[recording_loc][key_name] = validate_timestamp_format(timestamp=recordings[recording_loc][key_name])
 
-    valid_recordings = [r for r in recordings if r['@starttimelocal'] is not None]
-    valid_recordings.sort(key=lambda x: x['@starttimelocal'], reverse=newest)
+    valid_recordings = [r for r in recordings if r[key_name] is not None]
+    valid_recordings.sort(key=lambda x: x[key_name], reverse=newest)
     return valid_recordings
 
 
@@ -155,4 +155,32 @@ def validate_timestamp_format(timestamp:(str or datetime.datetime)):
 
     return None
 
+def convert_to_utc(timestamp:(str or datetime.datetime)):
+    updated_ts = validate_timestamp_format(timestamp=timestamp) # convert to datetime format
+    if not updated_ts:
+        raise ValueError("Invalid timestamp format")
+    utc_timestamp = updated_ts.replace(tzinfo=datetime.timezone.utc) if not updated_ts.tzinfo else updated_ts.astimezone(datetime.timezone.utc)
+    return utc_timestamp
 
+
+
+def parse_logs(content:str):
+    log_text = content.strip().splitlines()
+    raw_dicts = [{"line_number": i + 1, "message": line} for i, line in enumerate(log_text) if
+                 line not in ["", "----- System log -----"]]
+
+    log_pattern = re.compile(
+        r"^(?:(?P<timestamp>\S+) )?"
+        r"(?:(?P<host>\S+) )?"
+        r"(?:\[ (?P<level>\w+) \] )?"
+        r"(?:(?P<subsystem>\w+): )?"
+        r"(?P<message>.+)$"
+    )
+
+    parsed_logs = []
+    for raw_dict in raw_dicts:
+        match = log_pattern.match(raw_dict['message'])
+        if match:
+            parsed_logs.append(match.groupdict())
+
+    return parsed_logs

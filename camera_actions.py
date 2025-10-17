@@ -3,9 +3,10 @@ from flask import Flask, jsonify
 import camera_functions
 from __support__ import extract_credentials
 app = Flask(__name__)
-BASE_URL = ""
-USER = ""
-PASSWORD = ""
+
+BASE_URL = "166.143.227.89"
+USER = "AnyLog"
+PASSWORD = "OriIsTheBest#1!"
 
 #--- Credentials --
 def configure_client(camera_conn:str=None):
@@ -102,13 +103,23 @@ def recording_info(record_id:str=None):
 def recording_export(record_id:str=None):
     return camera_functions.export_recording(base_url=BASE_URL, user=USER, password=PASSWORD, record_id=record_id)
 
-@app.route("/logs", methods=["GET"])
-def get_logs():
-    return camera_functions.get_logs(base_url=BASE_URL, user=USER, password=PASSWORD)
+@app.route("/sys-logs", methods=["GET"])
+def get_syslogs():
+    return camera_functions.get_syslogs(base_url=BASE_URL, user=USER, password=PASSWORD)
+
+@app.route("/event-logs", methods=["GET"])
+def get_eventlogs():
+    return camera_functions.get_eventlogs(base_url=BASE_URL, user=USER, password=PASSWORD)
+
+@app.route("/crash-logs", methods=["GET"])
+def get_crashlogs():
+    return camera_functions.get_crashlogs(base_url=BASE_URL, user=USER, password=PASSWORD)
+
 
 @app.route("/snapshot", methods=["GET"])
 def snapshot():
     return camera_functions.take_snapshot(base_url=BASE_URL, user=USER, password=PASSWORD)
+
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=False, use_reloader=False)

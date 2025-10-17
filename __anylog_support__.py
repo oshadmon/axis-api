@@ -112,6 +112,61 @@ def create_mapping_policy(policy_name:str, dbms:str="bring [dbms]", table:str="b
 
     return json.dumps(new_policy)
 
+
+def create_syslog_mapping_policy(policy_name:str, dbms:str="bring [dbms]", table:str="bring [table]"):
+    """
+    {
+        '': 'ambcma: loading out-of-tree module taints kernel.',
+        'subsystem': 'kernel',
+        }
+    :param policy_name:
+    :param dbms:
+    :param table:
+    :return:
+    """
+    new_policy = {
+        "mapping": {
+            'id': policy_name,
+            'name': policy_name,
+            'dbms': dbms,
+            'table': table,
+            'schema': {
+                "timestamp": {
+                    "type": "timestamp",
+                    "bring": "[timestamp]",
+                    "default": "now()"
+                },
+                "serial": {
+                    "type": "string",
+                    "bring": "[serial]",
+                    "default": ""
+                },
+                "subsystem": {
+                    "type": "string",
+                    "bring": "[subsystem]",
+                    "default": "kernel"
+                },
+                "host": {
+                    "type": "string",
+                    "bring": "[host]",
+                    "default": ""
+                },
+                "level": {
+                    "type": "string",
+                    "bring": "[level]",
+                    "default": ""
+                },
+                "message": {
+                    "type": "string",
+                    "bring": "[message]",
+                    "default": ""
+                }
+            }
+        }
+    }
+
+    return json.dumps(new_policy)
+
 def create_video_mapping_policy(policy_name:str, dbms:str="bring [dbms]", table:str="bring [table]"):
     new_policy = {
         "mapping": {
@@ -217,7 +272,7 @@ def check_mqtt(anylog_conn:str, topic:str):
     return output
 
 
-def declare_mqtt_request(anylog_conn:str, broker:str, topic:str, policy_id:str, port:int=None, user:str=None, password:str=None):
+def declare_mqtt_request(anylog_conn:str, broker:str, topic:str, port:int=None, user:str=None, password:str=None):
     request_cmd = f"run msg client where broker={broker} "
 
     if port:
@@ -229,7 +284,7 @@ def declare_mqtt_request(anylog_conn:str, broker:str, topic:str, policy_id:str, 
     if password:
         request_cmd += f"and password={password} "
 
-    request_cmd += f"and log=false and topic=(name={topic} and policy={policy_id})"
+    request_cmd += f"and log=false and {topic}"
 
     headers = {
         "command": request_cmd,
