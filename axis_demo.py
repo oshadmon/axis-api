@@ -118,16 +118,7 @@ def main():
         payload = build_payload(msg=msg, logical_database=args.logical_database, serial_id=serial, camera_url=camera_url,
                                 camera_user=camera_user, camera_password=camera_password)
 
-        __anylog_support__.publish_data(anylog_conn=args.anylog_conn, topic=args.local_camera_topic, payload=payload)
-
-
-
-
-
-
-
-
-
+        __anylog_support__.publish_data(anylog_conn=args.anylog_conn, topic=args.topic, payload=payload)
 
 if __name__ == '__main__':
     main()
