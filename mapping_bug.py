@@ -37,7 +37,7 @@ def main():
     is_policy = __support__.check_policy(anylog_conn=anylog_conn, where_condition={"id": policy})
     if not is_policy:
         new_policy = __create_policy(policy=policy)
-        __anylog_support__.declare_policy(raw_policy=new_policy, anylog_conn=anylog_conn)
+        __anylog_support__.declare_policy(raw_policy=new_policy, anylog_conn=anylog_conn, use_ledger=False)
 
     if not __anylog_support__.check_mqtt(anylog_conn=anylog_conn, topic=policy):
         __anylog_support__.declare_mqtt_request(anylog_conn=anylog_conn, broker='rest',

@@ -248,7 +248,7 @@ def create_video_mapping_policy(policy_name:str, dbms:str="bring [dbms]", table:
     return json.dumps(new_policy)
 
 
-def declare_policy(raw_policy, anylog_conn:str):
+def declare_policy(raw_policy, anylog_conn:str, use_ledger:bool=True):
     """
     REST process to declare policy on the blockchain
     """
@@ -257,6 +257,10 @@ def declare_policy(raw_policy, anylog_conn:str):
         'command': 'blockchain insert where policy=!new_policy and local=true and master=!ledger_conn',
         'User-Agent': 'AnyLog/1.23'
     }
+
+    if not use_ledger:
+        headers['command'] = headers['command'].split(" and master")[0]
+
     __support__.rest_request(method='POST', url=f"http://{anylog_conn}", headers=headers, data_payload=new_policy)
 
 
