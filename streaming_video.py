@@ -50,10 +50,12 @@ NMS_THRESHOLD = 0.4
 
 
 class StreamingVideo:
-    def __init__(self, base_url: str, user: str, password: str):
+    def __init__(self, base_url: str, user: str, password: str, dbms:str, table:Str):
         self.base_url = base_url
         self.camera_user = user
         self.camera_password = password
+        self.dbms = dbms
+        self.table = table
 
         password = quote(password)
         self.rtsp_url = f"rtsp://{user}:{password}@{base_url}:554/axis-media/media.amp?videocodec=h264"
@@ -162,6 +164,8 @@ class StreamingVideo:
             # take snapshot
             payloads = []
             payload = {
+                "dbms": self.dbms,
+                "table": self.table,
                 'timestamp': datetime.datetime.now(tz=datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
             }
 
@@ -177,6 +181,41 @@ class StreamingVideo:
                 payloads.append(payload)
 
             # publish to AnyLog
+            """
+            {
+                "mapping": {
+                    "id": "axis-video",
+                    "name": "axis-video", 
+                    "dbms": "bring [dbms]",
+                    "table"; "bring [table],
+                    "schema": {
+                        "timestamp": {
+                            "type": "timestamp", 
+                            "default": "now()", 
+                            "bring": "[timestamp]"
+                        },
+                        "object": {
+                            "type": "string",
+                            "bring": "[object]",
+                            "default": ""
+                        },
+                        "count": {
+                            "type": "int",
+                            "bring": "[count]",
+                            "default": 1
+                        },
+                        'file': {
+                            "blob": True,
+                            "bring": "[snapshot]",
+                            "extension": "jpeg",
+                            "apply": "base64decoding",
+                            "hash": "md5",
+                            "type": "varchar"
+                        }
+                    }
+                }
+                        
+            """
             print(json.dumps(payloads, indent=2))
 
         return frame
