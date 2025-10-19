@@ -1,5 +1,4 @@
 import datetime
-import time
 import cv2
 import math
 import numpy as np
@@ -93,11 +92,13 @@ def object_detections(dbms:str, table:str, base_url:str, user:str, password:str,
     """
     payloads = []
     snapshot = camera_functions.take_snapshot(base_url=base_url, user=user, password=password)
+    list_recordings = camera_functions.list_recordings(base_url=base_url, user=user, password=password)
+    latest_recording = camera_functions.sort_timestamps(recordings=list_recordings, key_name='@starttimelocal', newest=True)[0]['@recordingid']
     payload = {
         "dbms": dbms,
         "table": table,
         "timestamp": datetime.datetime.now(tz=datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
-        "recording": "",  # Axis video ID (will add once recording process is added)
+        "recording": latest_recording,  # Axis video ID (will add once recording process is added)
         "content": base64.b64encode(snapshot).decode("utf-8")
     }
     objects = dict(Counter(detected_objects))
@@ -108,6 +109,16 @@ def object_detections(dbms:str, table:str, base_url:str, user:str, password:str,
         payloads.append(payload)
 
     print(payloads)
+
+def video_storage():
+    """
+    rewrite
+        1. 	⏳ Wait 3 minutes
+        2. 	🔁 Restart recording to segment video
+        3. 	📥 Pull the latest complete recording
+        4. 	💾 Store the last 10 minutes (or max available)
+    """
+    time.sleep(3)
 
 
 class StreamingVideo:
