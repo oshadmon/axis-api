@@ -78,6 +78,9 @@ class StreamingVideo:
             raise Exception(f"Failed to open connection against {self.rtsp_url}")
 
     def detect_objects(self, frame):
+        """
+        Detect object(s) on screen
+        """
         h, w = frame.shape[:2]
         blob = cv2.dnn.blobFromImage(frame, 1 / 255.0, (416, 416), swapRB=True, crop=False)
         net.setInput(blob)
@@ -183,7 +186,7 @@ class StreamingVideo:
                     self.user_input = None
 
                 if self.show_window:
-                    cv2.imshow("Axis Camera Stream", frame)
+                    cv2.imshow("Axis Camera Stream", frame) # this shows the video feed
                     cv2.waitKey(1)
 
         except KeyboardInterrupt:

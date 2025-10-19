@@ -4,4 +4,3 @@ paho-mqtt>=0.0
 requests>=0.0
 xmltodict>=0.0
 opencv-python>=0.0
-wget>=0.0
