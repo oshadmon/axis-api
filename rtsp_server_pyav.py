@@ -1,7 +1,9 @@
 import av
 import cv2
-from urllib.parse import quote
 import threading
+from urllib.parse import quote
+
+import rtsp_insight_modeling
 
 class RTSPServer:
     def __init__(self, base_url: str, user: str, password: str, port: int = 554):
@@ -72,6 +74,8 @@ class RTSPServer:
 
                 for frame in packet.decode():
                     img = frame.to_ndarray(format="bgr24")
+
+                    img = rtsp_insight_modeling.detect_objects(img) # this creates the bbox around the objects
 
                     # handle user input
                     if self.user_input == "h":
