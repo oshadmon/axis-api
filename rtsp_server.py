@@ -1,3 +1,5 @@
+import datetime
+import time
 import cv2
 import math
 import numpy as np
@@ -6,6 +8,9 @@ from urllib.parse import quote
 import urllib.request
 import threading
 from collections import Counter
+import base64
+
+import camera_functions
 
 ROOT_DIR = os.path.dirname(os.path.expanduser(os.path.expandvars(__file__)))
 MODELS = os.path.join(ROOT_DIR, 'models')
@@ -44,8 +49,76 @@ CONF_THRESHOLD = 0.3
 NMS_THRESHOLD = 0.4
 
 
+def object_detections(dbms:str, table:str, base_url:str, user:str, password:str, detected_objects):
+    """
+    publish object detection
+    :mapping:
+    {
+        "mapping": {
+            "id": "axis-video",
+            "name": "axis-video",
+            "dbms": "bring [dbms]",
+            "table"; "bring [table],
+            "schema": {
+                "timestamp": {
+                    "type": "timestamp",
+                    "default": "now()",
+                    "bring": "[timestamp]"
+                },
+                "object": {
+                    "type": "string",
+                    "bring": "[object]",
+                    "default": ""
+                },
+                "count": {
+                    "type": "int",
+                    "bring": "[count]",
+                    "default": 1
+                },
+                "recording": {
+                    "type": "string",
+                    "bring": "[recording]",
+                    "default": ""
+                },
+                'file': {
+                    "blob": True,
+                    "bring": "[snapshot]",
+                    "extension": "jpeg",
+                    "apply": "base64decoding",
+                    "hash": "md5",
+                    "type": "varchar"
+                }
+            }
+    }
+    """
+    payloads = []
+    snapshot = camera_functions.take_snapshot(base_url=base_url, user=user, password=password)
+    payload = {
+        "dbms": dbms,
+        "table": table,
+        "timestamp": datetime.datetime.now(tz=datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+        "recording": "",  # Axis video ID (will add once recording process is added)
+        "content": base64.b64encode(snapshot).decode("utf-8")
+    }
+    objects = dict(Counter(detected_objects))
+
+    for object in objects:
+        payload['object'] = object
+        payload['count'] = objects[object]
+        payloads.append(payload)
+
+    print(payloads)
+
+
 class StreamingVideo:
-    def __init__(self, base_url:str, user:str, password:str, port:int=554):
+    def __init__(self, dbms:str, table:str, base_url:str, user:str, password:str, port:int=554):
+        self.base_url = base_url
+        self.camera_user =  user
+        self.camera_password = password
+
+        self.dbms = dbms
+        self.table = table
+
         password = quote(password)
         self.rtsp_url = f"rtsp://{user}:{password}@{base_url}:{port}/axis-media/media.amp?videocodec=h264"
         self.open_connection()
@@ -152,9 +225,9 @@ class StreamingVideo:
             self.prev_boxes = self.prev_boxes[-50:]
             self.prev_classes = self.prev_classes[-50:]
 
-        if detected_objects:
-            counts = Counter(detected_objects)
-            print(f"Detected moving objects: {', '.join(f'{k}: {v}' for k, v in counts.items())}")
+        if detected_objects: # take snapshot + create payloads
+            object_detections(base_url=self.base_url, user=self.camera_user, password=self.camera_password,
+                              dbms=self.dbms, table=self.table, detected_objects=detected_objects)
 
         return frame
 

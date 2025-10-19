@@ -20,8 +20,8 @@ def main():
     # if not is_policy: # declare camera policy
     #     __anylog_support__.declare_policy(raw_policy=policy, anylog_conn=args.anylog_conn)
 
-    # table_name=f"camera_{serial}"
-    sv = rtsp_server.StreamingVideo(base_url=camera_url, user=camera_user, password=camera_password)
+    table_name=f"camera_{serial}"
+    sv = rtsp_server.StreamingVideo(base_url=camera_url, user=camera_user, password=camera_password, dbms=args.logical_database, table=table_name)
     sv.show_video()
 
         
