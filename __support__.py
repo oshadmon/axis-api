@@ -4,6 +4,7 @@ import requests
 import xmltodict
 import datetime
 
+
 def camel_to_snake(name: str) -> str:
     """Convert CamelCase or PascalCase to snake_case."""
     s1 = re.sub(r'(.)([A-Z][a-z]+)', r'\1_\2', name)
