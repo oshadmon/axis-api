@@ -188,3 +188,12 @@ def parse_logs(content:str):
             parsed_logs.append(match.groupdict())
 
     return parsed_logs
+
+
+def detection_count(objects:list)->dict:
+    objects_dict = {}
+    for object in objects:
+        if object not in objects_dict:
+            objects_dict[object] = 0
+        objects_dict[object] += 1
+    return objects_dict
