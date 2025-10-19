@@ -118,7 +118,8 @@ def video_storage():
         3. 	📥 Pull the latest complete recording
         4. 	💾 Store the last 10 minutes (or max available)
     """
-    time.sleep(3)
+    # time.sleep(3)
+    pass
 
 
 class StreamingVideo:
