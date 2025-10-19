@@ -50,7 +50,7 @@ CLASSES = [
 
 CONF_THRESHOLD = 0.3
 NMS_THRESHOLD = 0.4
-with open(COCO_NAMES_PATH, "r") as f:
+with open(COO_NAMES_PATH, "r") as f:
     COCO_CLASSES = [line.strip() for line in f.readlines()]
 
 
