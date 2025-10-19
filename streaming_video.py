@@ -1,3 +1,6 @@
+import base64
+import datetime
+import json
 import cv2
 import math
 import numpy as np
@@ -5,7 +8,9 @@ import os
 from urllib.parse import quote
 import urllib.request
 import threading
-from collections import Counter
+
+import __support__
+import camera_functions
 
 ROOT_DIR = os.path.dirname(os.path.expanduser(os.path.expandvars(__file__)))
 MODELS = os.path.join(ROOT_DIR, 'models')
@@ -46,6 +51,10 @@ NMS_THRESHOLD = 0.4
 
 class StreamingVideo:
     def __init__(self, base_url: str, user: str, password: str):
+        self.base_url = base_url
+        self.camera_user = user
+        self.camera_password = password
+
         password = quote(password)
         self.rtsp_url = f"rtsp://{user}:{password}@{base_url}:554/axis-media/media.amp?videocodec=h264"
         self.open_connection()
@@ -150,8 +159,25 @@ class StreamingVideo:
             self.prev_classes = self.prev_classes[-50:]
 
         if detected_objects:
-            counts = Counter(detected_objects)
-            print(f"Detected moving objects: {', '.join(f'{k}: {v}' for k, v in counts.items())}")
+            # take snapshot
+            payloads = []
+            payload = {
+                'timestamp': datetime.datetime.now(tz=datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+            }
+
+            snapshot = camera_functions.take_snapshot(base_url=self.base_url, user=self.camera_user,
+                                                      password=self.camera_password)
+            base64_snapshot = base64.b64encode(snapshot).decode("utf-8")
+
+            detected_objects = __support__.detection_count(objects=detected_objects)
+            payload['content'] = base64_snapshot
+            for object in detected_objects:
+                payload['object'] = object
+                payload['count'] = detected_objects[object]
+                payloads.append(payload)
+
+            # publish to AnyLog
+            print(json.dumps(payloads, indent=2))
 
         return frame
 
