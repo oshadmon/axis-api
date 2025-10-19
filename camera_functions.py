@@ -1,5 +1,5 @@
 import ast
-import os
+import subprocess
 
 from __support__ import rest_request, convert_xml, validate_timestamp_format, sort_timestamps, parse_logs
 
@@ -211,6 +211,42 @@ def take_snapshot(base_url:str, user:str, password:str):
     return response.content
 
     # return f"Snapshot saved to {filename}"
+
+def record_video_ffmpeg(base_url: str, user: str, password: str, duration: int = 10, file_name: str = "motion_event.mp4",
+                        trigger_event: bool = True):
+    """
+    Record video from Axis camera using FFmpeg for a given duration (in seconds).
+    Optionally trigger a motion event or log metadata via REST before recording.
+    """
+    # Optional: trigger motion event or log metadata
+    if trigger_event:
+        event_url = f"http://{base_url}/axis-cgi/io/virtualinput.cgi"
+        params = {"action": "activate", "port": "1"}  # Example virtual port
+        try:
+            rest_request("GET", event_url, params=params, user=user, password=password)
+            print("Triggered virtual input before recording.")
+        except Exception as e:
+            print(f"Warning: Failed to trigger event: {e}")
+
+    # Construct RTSP stream URL
+    stream_url = f"rtsp://{user}:{password}@{base_url}/axis-media/media.amp"
+
+    # FFmpeg command to record video
+    command = [
+        "ffmpeg",
+        "-y",  # Overwrite output file if exists
+        "-i", stream_url,
+        "-t", str(duration),
+        "-c:v", "copy",  # Copy codec to avoid re-encoding
+        file_name
+    ]
+
+    try:
+        subprocess.run(command, check=True)
+        print(f"Recording saved to {file_name}")
+    except subprocess.CalledProcessError as e:
+        raise Exception(f"FFmpeg recording failed: {e}")
+
 
 #--- Other functions ---
 def id_by_timestamp(base_url:str, user:str, password:str, timestamp:str):

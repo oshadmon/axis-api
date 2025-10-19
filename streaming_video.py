@@ -8,11 +8,14 @@ import os
 from urllib.parse import quote
 import urllib.request
 import threading
-
+import time
 import __support__
 import camera_functions
 
 ROOT_DIR = os.path.dirname(os.path.expanduser(os.path.expandvars(__file__)))
+DATA_DIR = os.path.join(ROOT_DIR, 'data')
+if not os.path.isdir(DATA_DIR):
+    os.makedirs(DATA_DIR, exist_ok=True)
 MODELS = os.path.join(ROOT_DIR, 'models')
 if not os.path.isdir(MODELS):
     os.makedirs(MODELS, exist_ok=True)
@@ -50,7 +53,7 @@ NMS_THRESHOLD = 0.4
 
 
 class StreamingVideo:
-    def __init__(self, base_url: str, user: str, password: str, dbms:str, table:Str):
+    def __init__(self, base_url:str, user:str, password:str, dbms:str, table:str):
         self.base_url = base_url
         self.camera_user = user
         self.camera_password = password
@@ -71,6 +74,10 @@ class StreamingVideo:
         self.running = True
         self.user_input = None
 
+        # threading
+        self.recording_lock = threading.Lock()
+        self.recording_thread = None
+
         # Load COCO classes
         with open(COCO_NAMES_PATH, "r") as f:
             self.COCO_CLASSES = [line.strip() for line in f.readlines()]
@@ -83,10 +90,40 @@ class StreamingVideo:
         while self.running:
             self.user_input = input().strip().lower()
 
+    def _trigger_recording(self, file_path, duration=5):
+        """Internal helper to call record_video without blocking main detection loop."""
+        try:
+            camera_functions.record_video_ffmpeg(
+                base_url=self.base_url,
+                user=self.camera_user,
+                password=self.camera_password,
+                duration=duration,
+                file_name=file_path
+            )
+            # print(f"Recording saved to {file_path}")
+        finally:
+            with self.recording_lock:
+                self.recording_thread = None  # mark thread finished
+
+
     def open_connection(self):
         self.cap = cv2.VideoCapture(self.rtsp_url)
         if not self.cap.isOpened():
             raise Exception(f"Failed to open connection against {self.rtsp_url}")
+
+    def start_recording(self, file_path, duration=5):
+        """Start recording in a background thread if not already running."""
+        with self.recording_lock:
+            if self.recording_thread is None:
+                self.recording_thread = threading.Thread(
+                    target=self._trigger_recording,
+                    args=(file_path, duration),
+                    daemon=True
+                )
+                self.recording_thread.start()
+            else:
+                print("Recording already in progress. Skipping new trigger.")
+
 
     def detect_objects(self, frame):
         h, w = frame.shape[:2]
@@ -161,20 +198,32 @@ class StreamingVideo:
             self.prev_classes = self.prev_classes[-50:]
 
         if detected_objects:
-            # take snapshot
             payloads = []
+            # take snapshot
+            snapshot = camera_functions.take_snapshot(base_url=self.base_url, user=self.camera_user,
+                                                      password=self.camera_password)
+
+            fname = f'{self.dbms}.{self.table}.{int(time.time() * 1000)}.mp4'
+            """
+            rewrite
+                1. 	⏳ Wait 3 minutes
+                2. 	🔁 Restart recording to segment video
+                3. 	📥 Pull the latest complete recording
+                4. 	💾 Store the last 10 minutes (or max available)
+            """
+            # full_path = os.path.join(DATA_DIR, fname)
+            # self.start_recording(full_path, duration=5) # record video + store lo
+
+            # Prepare payloads
             payload = {
                 "dbms": self.dbms,
                 "table": self.table,
-                'timestamp': datetime.datetime.now(tz=datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+                "timestamp": datetime.datetime.now(tz=datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+                "recording": fname,
+                "content": base64.b64encode(snapshot).decode("utf-8")
             }
 
-            snapshot = camera_functions.take_snapshot(base_url=self.base_url, user=self.camera_user,
-                                                      password=self.camera_password)
-            base64_snapshot = base64.b64encode(snapshot).decode("utf-8")
-
             detected_objects = __support__.detection_count(objects=detected_objects)
-            payload['content'] = base64_snapshot
             for object in detected_objects:
                 payload['object'] = object
                 payload['count'] = detected_objects[object]
@@ -203,6 +252,11 @@ class StreamingVideo:
                             "type": "int",
                             "bring": "[count]",
                             "default": 1
+                        },
+                        "recording": {
+                            "type": "string", 
+                            "bring": "[recording]",
+                            "default": ""
                         },
                         'file': {
                             "blob": True,

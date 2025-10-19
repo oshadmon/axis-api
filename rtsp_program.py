@@ -3,7 +3,9 @@ import streaming_video
 
 import __support__
 import __anylog_support__
+import urllib3
 
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -14,13 +16,13 @@ def main():
     camera_url, camera_user, camera_password = __support__.extract_credentials(conn_info=args.camera_conn)
     # create camera policy if DNE
     policy, serial = __anylog_support__.create_camera_policy(camera_url, camera_user, camera_password)
-    is_policy = __support__.check_policy(anylog_conn=args.anylog_conn, where_condition={"serial_number": serial})
+    # is_policy = __support__.check_policy(anylog_conn=args.anylog_conn, where_condition={"serial_number": serial})
     # if not is_policy: # declare camera policy
     #     __anylog_support__.declare_policy(raw_policy=policy, anylog_conn=args.anylog_conn)
 
     table_name=f"camera_{serial}"
     sv = streaming_video.StreamingVideo(base_url=camera_url, user=camera_user, password=camera_password,
-                                        dbms=args.logicasl_database, table=table_name)
+                                        dbms=args.logical_database, table=table_name)
     sv.show_video()
 
         
